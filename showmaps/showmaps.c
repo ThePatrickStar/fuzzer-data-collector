@@ -63,7 +63,8 @@ struct queue_entry {
   u32 bitmap_size,                    /* Number of bits set in bitmap     */
       exec_cksum;                     /* Checksum of the execution trace  */
 
-  u64 exec_us,                        /* Execution time (us)              */
+  u64 mtime,                          /* Last modification time           */
+      exec_us,                        /* Execution time (us)              */
       handicap,                       /* Number of queue cycles behind    */
       depth;                          /* Path depth                       */
 
@@ -767,12 +768,13 @@ void setup_dirs_fds(void) {
 
 /* Append new test case to the queue. */
 
-static void add_to_queue(u8* fname, u32 len) {
+static void add_to_queue(u8* fname, u32 len, u64 mtime) {
 
   struct queue_entry* q = ck_alloc(sizeof(struct queue_entry));
 
   q->fname        = fname;
   q->len          = len;
+  q->mtime        = mtime;
 
   if (queue_top) {
 
@@ -853,7 +855,9 @@ static void read_testcases(void) {
       FATAL("Test case '%s' is too big (%s, limit is %s)", fn,
             DMS(st.st_size), DMS(MAX_FILE));
 
-    add_to_queue(fn, st.st_size);
+    u64 mtime = (u64) st.st_mtim.tv_sec;
+
+    add_to_queue(fn, st.st_size, mtime);
 
   }
 
@@ -1072,7 +1076,7 @@ int main(int argc, char** argv) {
   u8* pure_fname;
 
   while (queue_cur != NULL) {
-
+    SAYF("queue_cur mtime is: %lld\n", queue_cur->mtime);
     // create hard link of current item to the out_file
     link_or_copy(queue_cur->fname, out_file);
 
