@@ -46,6 +46,40 @@
 #include <sys/types.h>
 #include <sys/resource.h>
 
+struct queue_entry {
+
+  u8* fname;                          /* File name for the test case      */
+  u32 len;                            /* Input length                     */
+
+  u8  cal_failed,                     /* Calibration failed?              */
+      trim_done,                      /* Trimmed?                         */
+      was_fuzzed,                     /* Had any fuzzing done yet?        */
+      passed_det,                     /* Deterministic stages passed?     */
+      has_new_cov,                    /* Triggers new coverage?           */
+      var_behavior,                   /* Variable behavior?               */
+      favored,                        /* Currently favored?               */
+      fs_redundant;                   /* Marked as redundant in the fs?   */
+
+  u32 bitmap_size,                    /* Number of bits set in bitmap     */
+      exec_cksum;                     /* Checksum of the execution trace  */
+
+  u64 exec_us,                        /* Execution time (us)              */
+      handicap,                       /* Number of queue cycles behind    */
+      depth;                          /* Path depth                       */
+
+  u8* trace_mini;                     /* Trace bytes, if kept             */
+  u32 tc_ref;                         /* Trace bytes ref count            */
+
+  struct queue_entry *next,           /* Next element, if any             */
+                     *next_100;       /* 100 elements ahead               */
+
+};
+
+static struct queue_entry *queue,     /* Fuzzing queue (linked list)      */
+                          *queue_cur, /* Current offset within the queue  */
+                          *queue_top, /* Top of the list                  */
+                          *q_prev100; /* Previous 100 marker              */
+
 static s32 child_pid;                 /* PID of the tested program         */
 
 static u8* trace_bits;                /* SHM with instrumentation bitmap   */
@@ -53,10 +87,12 @@ static u8* trace_bits;                /* SHM with instrumentation bitmap   */
 static u8 *in_dir,                    /* Input directory with test cases   */
           *out_file,                  /* File to fuzz, if any              */
           *out_dir,                   /* Working & output directory        */
+          *trace_file,                /* File to store the current trace   */
           *target_path,               /* Path to target binary             */
           *at_file;                   /* Substitution string for @@        */
 
-static u32 exec_tmout;                /* Exec timeout (ms)                 */
+static u32 queued_paths,              /* Total number of queued testcases  */
+           exec_tmout;                /* Exec timeout (ms)                 */
 
 static u64 mem_limit = MEM_LIMIT;     /* Memory limit (MB)                 */
 
@@ -107,6 +143,132 @@ static const u8 count_class_binary[256] = {
   [128 ... 255] = 128
 
 };
+
+static u8* DI(u64 val) {
+
+  static u8 tmp[12][16];
+  static u8 cur;
+
+  cur = (cur + 1) % 12;
+
+#define CHK_FORMAT(_divisor, _limit_mult, _fmt, _cast) do { \
+    if (val < (_divisor) * (_limit_mult)) { \
+      sprintf(tmp[cur], _fmt, ((_cast)val) / (_divisor)); \
+      return tmp[cur]; \
+    } \
+  } while (0)
+
+  /* 0-9999 */
+  CHK_FORMAT(1, 10000, "%llu", u64);
+
+  /* 10.0k - 99.9k */
+  CHK_FORMAT(1000, 99.95, "%0.01fk", double);
+
+  /* 100k - 999k */
+  CHK_FORMAT(1000, 1000, "%lluk", u64);
+
+  /* 1.00M - 9.99M */
+  CHK_FORMAT(1000 * 1000, 9.995, "%0.02fM", double);
+
+  /* 10.0M - 99.9M */
+  CHK_FORMAT(1000 * 1000, 99.95, "%0.01fM", double);
+
+  /* 100M - 999M */
+  CHK_FORMAT(1000 * 1000, 1000, "%lluM", u64);
+
+  /* 1.00G - 9.99G */
+  CHK_FORMAT(1000LL * 1000 * 1000, 9.995, "%0.02fG", double);
+
+  /* 10.0G - 99.9G */
+  CHK_FORMAT(1000LL * 1000 * 1000, 99.95, "%0.01fG", double);
+
+  /* 100G - 999G */
+  CHK_FORMAT(1000LL * 1000 * 1000, 1000, "%lluG", u64);
+
+  /* 1.00T - 9.99G */
+  CHK_FORMAT(1000LL * 1000 * 1000 * 1000, 9.995, "%0.02fT", double);
+
+  /* 10.0T - 99.9T */
+  CHK_FORMAT(1000LL * 1000 * 1000 * 1000, 99.95, "%0.01fT", double);
+
+  /* 100T+ */
+  strcpy(tmp[cur], "infty");
+  return tmp[cur];
+
+}
+
+
+/* Describe float. Similar to the above, except with a single
+   static buffer. */
+
+static u8* DF(double val) {
+
+  static u8 tmp[16];
+
+  if (val < 99.995) {
+    sprintf(tmp, "%0.02f", val);
+    return tmp;
+  }
+
+  if (val < 999.95) {
+    sprintf(tmp, "%0.01f", val);
+    return tmp;
+  }
+
+  return DI((u64)val);
+
+}
+
+
+/* Describe integer as memory size. */
+
+static u8* DMS(u64 val) {
+
+  static u8 tmp[12][16];
+  static u8 cur;
+
+  cur = (cur + 1) % 12;
+
+  /* 0-9999 */
+  CHK_FORMAT(1, 10000, "%llu B", u64);
+
+  /* 10.0k - 99.9k */
+  CHK_FORMAT(1024, 99.95, "%0.01f kB", double);
+
+  /* 100k - 999k */
+  CHK_FORMAT(1024, 1000, "%llu kB", u64);
+
+  /* 1.00M - 9.99M */
+  CHK_FORMAT(1024 * 1024, 9.995, "%0.02f MB", double);
+
+  /* 10.0M - 99.9M */
+  CHK_FORMAT(1024 * 1024, 99.95, "%0.01f MB", double);
+
+  /* 100M - 999M */
+  CHK_FORMAT(1024 * 1024, 1000, "%llu MB", u64);
+
+  /* 1.00G - 9.99G */
+  CHK_FORMAT(1024LL * 1024 * 1024, 9.995, "%0.02f GB", double);
+
+  /* 10.0G - 99.9G */
+  CHK_FORMAT(1024LL * 1024 * 1024, 99.95, "%0.01f GB", double);
+
+  /* 100G - 999G */
+  CHK_FORMAT(1024LL * 1024 * 1024, 1000, "%llu GB", u64);
+
+  /* 1.00T - 9.99G */
+  CHK_FORMAT(1024LL * 1024 * 1024 * 1024, 9.995, "%0.02f TB", double);
+
+  /* 10.0T - 99.9T */
+  CHK_FORMAT(1024LL * 1024 * 1024 * 1024, 99.95, "%0.01f TB", double);
+
+#undef CHK_FORMAT
+
+  /* 100T+ */
+  strcpy(tmp[cur], "infty");
+  return tmp[cur];
+
+}
 
 static void classify_counts(u8* mem, const u8* map) {
 
@@ -174,21 +336,21 @@ static u32 write_results(void) {
   u8  cco = !!getenv("AFL_CMIN_CRASHES_ONLY"),
       caa = !!getenv("AFL_CMIN_ALLOW_ANY");
 
-  if (!strncmp(out_file, "/dev/", 5)) {
+  if (!strncmp(trace_file, "/dev/", 5)) {
 
-    fd = open(out_file, O_WRONLY, 0600);
-    if (fd < 0) PFATAL("Unable to open '%s'", out_file);
+    fd = open(trace_file, O_WRONLY, 0600);
+    if (fd < 0) PFATAL("Unable to open '%s'", trace_file);
 
-  } else if (!strcmp(out_file, "-")) {
+  } else if (!strcmp(trace_file, "-")) {
 
     fd = dup(1);
     if (fd < 0) PFATAL("Unable to open stdout");
 
   } else {
 
-    unlink(out_file); /* Ignore errors */
-    fd = open(out_file, O_WRONLY | O_CREAT | O_EXCL, 0600);
-    if (fd < 0) PFATAL("Unable to create '%s'", out_file);
+    unlink(trace_file); /* Ignore errors */
+    fd = open(trace_file, O_WRONLY | O_CREAT | O_EXCL, 0600);
+    if (fd < 0) PFATAL("Unable to create '%s'", trace_file);
 
   }
 
@@ -198,7 +360,7 @@ static u32 write_results(void) {
     for (i = 0; i < MAP_SIZE; i++)
       if (trace_bits[i]) ret++;
     
-    ck_write(fd, trace_bits, MAP_SIZE, out_file);
+    ck_write(fd, trace_bits, MAP_SIZE, trace_file);
     close(fd);
 
   } else {
@@ -252,6 +414,7 @@ static void run_target(char** argv) {
   if (!quiet_mode)
     SAYF("-- Program output begins --\n" cRST);
 
+  memset(trace_bits, 0, MAP_SIZE);
   MEM_BARRIER();
 
   child_pid = fork();
@@ -481,6 +644,7 @@ static void usage(u8* argv0) {
 
        "Required parameters:\n\n"
 
+       "  -i dir        - input directory with test cases\n"
        "  -o file       - file to write the trace data to\n\n"
 
        "Execution control settings:\n\n"
@@ -590,19 +754,6 @@ void setup_dirs_fds(void) {
   if (mkdir(tmp, 0700)) PFATAL("Unable to create '%s'", tmp);
   ck_free(tmp);
 
-
-  /* All recorded crashes. */
-
-  tmp = alloc_printf("%s/crashes", out_dir);
-  if (mkdir(tmp, 0700)) PFATAL("Unable to create '%s'", tmp);
-  ck_free(tmp);
-
-  /* All recorded hangs. */
-
-  tmp = alloc_printf("%s/hangs", out_dir);
-  if (mkdir(tmp, 0700)) PFATAL("Unable to create '%s'", tmp);
-  ck_free(tmp);
-
   /* Generally useful file descriptors. */
 
   dev_null_fd = open("/dev/null", O_RDWR);
@@ -610,6 +761,145 @@ void setup_dirs_fds(void) {
 
   dev_urandom_fd = open("/dev/urandom", O_RDONLY);
   if (dev_urandom_fd < 0) PFATAL("Unable to open /dev/urandom");
+
+}
+
+
+/* Append new test case to the queue. */
+
+static void add_to_queue(u8* fname, u32 len) {
+
+  struct queue_entry* q = ck_alloc(sizeof(struct queue_entry));
+
+  q->fname        = fname;
+  q->len          = len;
+
+  if (queue_top) {
+
+    queue_top->next = q;
+    queue_top = q;
+
+  } else q_prev100 = queue = queue_top = q;
+
+  queued_paths++;
+
+  if (!(queued_paths % 100)) {
+
+    q_prev100->next_100 = q;
+    q_prev100 = q;
+
+  }
+
+}
+
+
+static void read_testcases(void) {
+
+  struct dirent **nl;
+  s32 nl_cnt;
+  u32 i;
+  u8* fn;
+
+  /* Auto-detect non-in-place resumption attempts. */
+
+  fn = alloc_printf("%s/queue", in_dir);
+  if (!access(fn, F_OK)) in_dir = fn; else ck_free(fn);
+
+  ACTF("Scanning '%s'...", in_dir);
+
+  /* We use scandir() + alphasort() rather than readdir() because otherwise,
+     the ordering  of test cases would vary somewhat randomly and would be
+     difficult to control. */
+
+  nl_cnt = scandir(in_dir, &nl, NULL, alphasort);
+
+  if (nl_cnt < 0) {
+
+    if (errno == ENOENT || errno == ENOTDIR)
+
+      SAYF("\n" cLRD "[-] " cRST
+           "The input directory does not seem to be valid - try again. The fuzzer needs\n"
+           "    one or more test case to start with - ideally, a small file under 1 kB\n"
+           "    or so. The cases must be stored as regular files directly in the input\n"
+           "    directory.\n");
+
+    PFATAL("Unable to open '%s'", in_dir);
+
+  }
+
+  for (i = 0; i < nl_cnt; i++) {
+
+    struct stat st;
+
+    u8* fn = alloc_printf("%s/%s", in_dir, nl[i]->d_name);
+
+    u8  passed_det = 0;
+
+    free(nl[i]); /* not tracked */
+
+    if (lstat(fn, &st) || access(fn, R_OK))
+      PFATAL("Unable to access '%s'", fn);
+
+    /* This also takes care of . and .. */
+
+    if (!S_ISREG(st.st_mode) || !st.st_size || strstr(fn, "/README.txt")) {
+
+      ck_free(fn);
+      continue;
+
+    }
+
+    if (st.st_size > MAX_FILE)
+      FATAL("Test case '%s' is too big (%s, limit is %s)", fn,
+            DMS(st.st_size), DMS(MAX_FILE));
+
+    add_to_queue(fn, st.st_size);
+
+  }
+
+  free(nl); /* not tracked */
+
+  if (!queued_paths) {
+
+    SAYF("\n" cLRD "[-] " cRST
+         "Looks like there are no valid test cases in the input directory! The fuzzer\n"
+         "    needs one or more test case to start with - ideally, a small file under\n"
+         "    1 kB or so. The cases must be stored as regular files directly in the\n"
+         "    input directory.\n");
+
+    FATAL("No usable test cases in '%s'", in_dir);
+
+  }
+
+}
+
+
+/* Helper function: link() if possible, copy otherwise. */
+
+static void link_or_copy(u8* old_path, u8* new_path) {
+
+  s32 i = link(old_path, new_path);
+  s32 sfd, dfd;
+  u8* tmp;
+
+  if (!i) return;
+
+  sfd = open(old_path, O_RDONLY);
+  if (sfd < 0) PFATAL("Unable to open '%s'", old_path);
+
+  dfd = open(new_path, O_WRONLY | O_CREAT | O_EXCL, 0600);
+  if (dfd < 0) PFATAL("Unable to create '%s'", new_path);
+
+  tmp = ck_alloc(64 * 1024);
+
+  while ((i = read(sfd, tmp, 64 * 1024)) > 0)
+    ck_write(dfd, tmp, i, new_path);
+
+  if (i < 0) PFATAL("read() failed");
+
+  ck_free(tmp);
+  close(sfd);
+  close(dfd);
 
 }
 
@@ -752,7 +1042,7 @@ int main(int argc, char** argv) {
 
     }
 
-  if (optind == argc || !out_file) usage(argv[0]);
+  if (optind == argc || !out_dir || !in_dir) usage(argv[0]);
 
   setup_shm();
   setup_signal_handlers();
@@ -772,18 +1062,51 @@ int main(int argc, char** argv) {
 
   setup_dirs_fds();
 
-  run_target(use_argv);
+  read_testcases();
 
-  tcnt = write_results();
+  ACTF("Got %d test cases\n", queued_paths);
 
-  if (!quiet_mode) {
+  // iterate over the queue
+  queue_cur = queue;
 
-    if (!tcnt) FATAL("No instrumentation detected" cRST);
-    OKF("Captured %u tuples in '%s'." cRST, tcnt, out_file);
+  u8* pure_fname;
+
+  while (queue_cur != NULL) {
+
+    // create hard link of current item to the out_file
+    link_or_copy(queue_cur->fname, out_file);
+
+    // run the program against the current item
+    run_target(use_argv);
+
+    // delete the out_file
+    unlink(out_file);
+
+    // setup the path for the new trace file
+    pure_fname = strrchr(queue_cur->fname, '/');
+    trace_file = alloc_printf("%s/traces/%s.txt", out_dir, pure_fname);
+
+    // write the trace
+    write_results();
+
+    // move to the next item in queue
+    queue_cur = queue_cur->next;
+
+    ck_free(trace_file);
 
   }
-
-  exit(child_crashed * 2 + child_timed_out);
+//  run_target(use_argv);
+//
+//  tcnt = write_results();
+//
+//  if (!quiet_mode) {
+//
+//    if (!tcnt) FATAL("No instrumentation detected" cRST);
+//    OKF("Captured %u tuples in '%s'." cRST, tcnt, out_file);
+//
+//  }
+//
+//  exit(child_crashed * 2 + child_timed_out);
 
 }
 
