@@ -64,9 +64,9 @@ struct queue_entry {
       exec_cksum;                     /* Checksum of the execution trace  */
 
   u64 mtime,                          /* Last modification time           */
-      exec_us,                        /* Execution time (us)              */
-      handicap,                       /* Number of queue cycles behind    */
-      depth;                          /* Path depth                       */
+      sec_slot,                       /* Slot of seed, in sec             */
+      min_slot,                       /* Slot of seed, in min             */
+      hour_slot;                      /* Slot of seed ,in hour            */
 
   u8* trace_mini;                     /* Trace bytes, if kept             */
   u32 tc_ref;                         /* Trace bytes ref count            */
@@ -94,7 +94,9 @@ static u8 *in_dir,                    /* Input directory with test cases   */
 static u32 queued_paths,              /* Total number of queued testcases  */
            exec_tmout;                /* Exec timeout (ms)                 */
 
-static u64 mem_limit = MEM_LIMIT;     /* Memory limit (MB)                 */
+static u64 min_mtime,                 /* Min mtime of all initial seeds    */
+           max_mtime,                 /* Max mtime of all initial seeds    */
+           mem_limit = MEM_LIMIT;     /* Memory limit (MB)                 */
 
 static s32 out_fd,                    /* Persistent fd for out_file        */
            dev_urandom_fd = -1,       /* Persistent fd for /dev/urandom    */
@@ -143,6 +145,21 @@ static const u8 count_class_binary[256] = {
   [128 ... 255] = 128
 
 };
+
+static u16 count_class_lookup16[65536];
+
+
+void init_count_class16(void) {
+
+  u32 b1, b2;
+
+  for (b1 = 0; b1 < 256; b1++)
+    for (b2 = 0; b2 < 256; b2++)
+      count_class_lookup16[(b1 << 8) + b2] =
+        (count_class_binary[b1] << 8) |
+        count_class_binary[b2];
+
+}
 
 static u8* DI(u64 val)
 {
@@ -295,6 +312,64 @@ static void classify_counts(u8* mem, const u8* map)
   }
 
 }
+
+
+// classify trace_bits counts
+
+#ifdef __x86_64__
+
+static inline void classify_trace_counts(u64* mem) {
+
+  u32 i = MAP_SIZE >> 3;
+
+  while (i--) {
+
+    /* Optimize for sparse bitmaps. */
+
+    if (unlikely(*mem)) {
+
+      u16* mem16 = (u16*)mem;
+
+      mem16[0] = count_class_lookup16[mem16[0]];
+      mem16[1] = count_class_lookup16[mem16[1]];
+      mem16[2] = count_class_lookup16[mem16[2]];
+      mem16[3] = count_class_lookup16[mem16[3]];
+
+    }
+
+    mem++;
+
+  }
+
+}
+
+#else
+
+static inline void classify_trace_counts(u32* mem) {
+
+  u32 i = MAP_SIZE >> 2;
+
+  while (i--) {
+
+    /* Optimize for sparse bitmaps. */
+
+    if (unlikely(*mem)) {
+
+      u16* mem16 = (u16*)mem;
+
+      mem16[0] = count_class_lookup16[mem16[0]];
+      mem16[1] = count_class_lookup16[mem16[1]];
+
+    }
+
+    mem++;
+
+  }
+
+}
+
+#endif /* ^__x86_64__ */
+
 
 // Linkedlist related
 
@@ -462,6 +537,19 @@ static u32 write_results(void) {
 
   return ret;
 
+}
+
+
+// update the slots for the seeds in queue; use param here to avoid modifying the real head
+
+void update_slots(struct queue_entry * head)
+{
+    while (head) {
+        head->sec_slot = head->mtime - min_mtime;
+        head->min_slot = head->sec_slot / 60;
+        head->hour_slot = head->sec_slot / 3600;
+        head = head->next;
+    }
 }
 
 
@@ -847,6 +935,14 @@ static void add_to_queue(u8* fname, u32 len, u64 mtime) {
   q->mtime        = mtime;
   q->prev         = NULL;
 
+  if (queued_paths == 0) {
+    max_mtime = mtime;
+    min_mtime = mtime;
+  }
+
+  if (mtime >= max_mtime) max_mtime = mtime;
+  if (mtime <= min_mtime) min_mtime = mtime;
+
   if (queue_top) {
 
     queue_top->next = q;
@@ -1133,10 +1229,15 @@ int main(int argc, char** argv) {
 
   read_testcases();
 
+  init_count_class16();
+
   ACTF("Got %d test cases\n", queued_paths);
 
   // sort the initial seed queue according to mtime
   quick_sort(queue);
+
+  // update the time slots for seeds
+  update_slots(queue);
 
   // iterate over the queue
   queue_cur = queue;
@@ -1144,7 +1245,9 @@ int main(int argc, char** argv) {
   u8* pure_fname;
 
   while (queue_cur != NULL) {
-    SAYF("queue_cur mtime is: %lld\n", queue_cur->mtime);
+
+    SAYF("queue_cur mtime is: %lld, sec_slot is: %lld, min_slot is: %lld, hour_slot is: %lld\n",\
+     queue_cur->mtime, queue_cur->sec_slot, queue_cur->min_slot, queue_cur->hour_slot);
     // create hard link of current item to the out_file
     link_or_copy(queue_cur->fname, out_file);
 
