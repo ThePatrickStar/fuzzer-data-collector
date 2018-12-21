@@ -72,14 +72,13 @@ struct queue_entry {
   u32 tc_ref;                         /* Trace bytes ref count            */
 
   struct queue_entry *next,           /* Next element, if any             */
-                     *next_100;       /* 100 elements ahead               */
+                     *prev;           /* Previous element, if any         */
 
 };
 
 static struct queue_entry *queue,     /* Fuzzing queue (linked list)      */
                           *queue_cur, /* Current offset within the queue  */
-                          *queue_top, /* Top of the list                  */
-                          *q_prev100; /* Previous 100 marker              */
+                          *queue_top; /* Top of the list                  */
 
 static s32 child_pid;                 /* PID of the tested program         */
 
@@ -145,7 +144,8 @@ static const u8 count_class_binary[256] = {
 
 };
 
-static u8* DI(u64 val) {
+static u8* DI(u64 val)
+{
 
   static u8 tmp[12][16];
   static u8 cur;
@@ -202,7 +202,8 @@ static u8* DI(u64 val) {
 /* Describe float. Similar to the above, except with a single
    static buffer. */
 
-static u8* DF(double val) {
+static u8* DF(double val)
+{
 
   static u8 tmp[16];
 
@@ -223,7 +224,8 @@ static u8* DF(double val) {
 
 /* Describe integer as memory size. */
 
-static u8* DMS(u64 val) {
+static u8* DMS(u64 val)
+{
 
   static u8 tmp[12][16];
   static u8 cur;
@@ -271,7 +273,8 @@ static u8* DMS(u64 val) {
 
 }
 
-static void classify_counts(u8* mem, const u8* map) {
+static void classify_counts(u8* mem, const u8* map)
+{
 
   u32 i = MAP_SIZE;
 
@@ -291,6 +294,73 @@ static void classify_counts(u8* mem, const u8* map) {
 
   }
 
+}
+
+// Linkedlist related
+
+void swap(struct queue_entry * a, struct queue_entry * b)
+{
+    u8 * tmp_fname;
+    u32 tmp_len;
+    u64 tmp_mtime;
+
+    tmp_fname = a->fname;
+    tmp_len = a->len;
+    tmp_mtime = a->mtime;
+
+    a->fname = b->fname;
+    a->len = b->len;
+    a->mtime = b->mtime;
+
+    b->fname = tmp_fname;
+    b->len = tmp_len;
+    b->mtime = tmp_mtime;
+}
+
+
+struct queue_entry * last_node(struct queue_entry * root)
+{
+    while (root && root->next)
+        root = root->next;
+    return root;
+}
+
+
+struct queue_entry * partition(struct queue_entry * l, struct queue_entry * h)
+{
+    // set the pivot point as h value
+    u64 x = h->mtime;
+
+    struct queue_entry * i = l->prev;
+
+    struct queue_entry * j = l;
+
+    for (; j != h; j = j->next) {
+        if (j->mtime <= x) {
+            i = (i == NULL) ? l : i->next;
+            swap(i, j);
+        }
+    }
+    i = (i == NULL) ? l : i->next;
+    swap(i, j);
+    return i;
+}
+
+
+void _quick_sort(struct queue_entry * l, struct queue_entry * h)
+{
+    if (h != NULL && l != h && l != h->next) {
+        struct queue_entry * p = partition(l, h);
+        _quick_sort(l, p->prev);
+        _quick_sort(p->next, h);
+    }
+}
+
+
+void quick_sort(struct queue_entry * head)
+{
+    struct queue_entry * h = last_node(head);
+    _quick_sort(head, h);
 }
 
 
@@ -775,22 +845,17 @@ static void add_to_queue(u8* fname, u32 len, u64 mtime) {
   q->fname        = fname;
   q->len          = len;
   q->mtime        = mtime;
+  q->prev         = NULL;
 
   if (queue_top) {
 
     queue_top->next = q;
+    q->prev = queue_top;
     queue_top = q;
 
-  } else q_prev100 = queue = queue_top = q;
+  } else queue = queue_top = q;
 
   queued_paths++;
-
-  if (!(queued_paths % 100)) {
-
-    q_prev100->next_100 = q;
-    q_prev100 = q;
-
-  }
 
 }
 
@@ -1069,6 +1134,9 @@ int main(int argc, char** argv) {
   read_testcases();
 
   ACTF("Got %d test cases\n", queued_paths);
+
+  // sort the initial seed queue according to mtime
+  quick_sort(queue);
 
   // iterate over the queue
   queue_cur = queue;
