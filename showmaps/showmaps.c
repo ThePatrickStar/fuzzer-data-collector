@@ -80,6 +80,19 @@ static struct queue_entry *queue,     /* Fuzzing queue (linked list)      */
                           *queue_cur, /* Current offset within the queue  */
                           *queue_top; /* Top of the list                  */
 
+// pair of time slot and value
+
+struct slot_val {
+  u64 slot;
+  u32 val;
+  struct slot_val *next;
+};
+
+static struct slot_val *slot_edge,    /* N.O. of edges covered over time   */
+                       *slot_edge_top,/* Top of slot_edge                  */
+                       *slot_entry,   /* N.O. of seeds found over time     */
+                       *slot_entry_top;
+
 static s32 child_pid;                 /* PID of the tested program         */
 
 static u8* trace_bits;                /* SHM with instrumentation bitmap   */
@@ -114,6 +127,8 @@ static volatile u8
            stop_soon,                 /* Ctrl-C pressed?                   */
            child_timed_out,           /* Child timed out?                  */
            child_crashed;             /* Child crashed?                    */
+
+u8  virgin_bits[MAP_SIZE];            /* Regions yet untouched by fuzzing  */
 
 /* Classify tuple counts. Instead of mapping to individual bits, as in
    afl-fuzz.c, we map to more user-friendly numbers between 1 and 8. */
@@ -438,6 +453,128 @@ void quick_sort(struct queue_entry * head)
     _quick_sort(head, h);
 }
 
+#define FF(_b)  (0xff << ((_b) << 3))
+
+static u32 count_bytes(u8* mem) {
+
+  u32* ptr = (u32*)mem;
+  u32  i   = (MAP_SIZE >> 2);
+  u32  ret = 0;
+
+  while (i--) {
+
+    u32 v = *(ptr++);
+
+    if (!v) continue;
+    if (v & FF(0)) ret++;
+    if (v & FF(1)) ret++;
+    if (v & FF(2)) ret++;
+    if (v & FF(3)) ret++;
+
+  }
+
+  return ret;
+
+}
+
+
+/* Count the number of non-255 bytes set in the bitmap. Used strictly for the
+   status screen, several calls per second or so. */
+
+static u32 count_non_255_bytes(u8* mem) {
+
+  u32* ptr = (u32*)mem;
+  u32  i   = (MAP_SIZE >> 2);
+  u32  ret = 0;
+
+  while (i--) {
+
+    u32 v = *(ptr++);
+
+    /* This is called on the virgin bitmap, so optimize for the most likely
+       case. */
+
+    if (v == 0xffffffff) continue;
+    if ((v & FF(0)) != FF(0)) ret++;
+    if ((v & FF(1)) != FF(1)) ret++;
+    if ((v & FF(2)) != FF(2)) ret++;
+    if ((v & FF(3)) != FF(3)) ret++;
+
+  }
+
+  return ret;
+
+}
+
+
+static inline u8 has_new_bits(u8* virgin_map) {
+
+#ifdef __x86_64__
+
+  u64* current = (u64*)trace_bits;
+  u64* virgin  = (u64*)virgin_map;
+
+  u32  i = (MAP_SIZE >> 3);
+
+#else
+
+  u32* current = (u32*)trace_bits;
+  u32* virgin  = (u32*)virgin_map;
+
+  u32  i = (MAP_SIZE >> 2);
+
+#endif /* ^__x86_64__ */
+
+  u8   ret = 0;
+
+  while (i--) {
+
+    /* Optimize for (*current & *virgin) == 0 - i.e., no bits in current bitmap
+       that have not been already cleared from the virgin map - since this will
+       almost always be the case. */
+
+    if (unlikely(*current) && unlikely(*current & *virgin)) {
+
+      if (likely(ret < 2)) {
+
+        u8* cur = (u8*)current;
+        u8* vir = (u8*)virgin;
+
+        /* Looks like we have not found any new bytes yet; see if any non-zero
+           bytes in current[] are pristine in virgin[]. */
+
+#ifdef __x86_64__
+
+        if ((cur[0] && vir[0] == 0xff) || (cur[1] && vir[1] == 0xff) ||
+            (cur[2] && vir[2] == 0xff) || (cur[3] && vir[3] == 0xff) ||
+            (cur[4] && vir[4] == 0xff) || (cur[5] && vir[5] == 0xff) ||
+            (cur[6] && vir[6] == 0xff) || (cur[7] && vir[7] == 0xff)) ret = 2;
+        else ret = 1;
+
+#else
+
+        if ((cur[0] && vir[0] == 0xff) || (cur[1] && vir[1] == 0xff) ||
+            (cur[2] && vir[2] == 0xff) || (cur[3] && vir[3] == 0xff)) ret = 2;
+        else ret = 1;
+
+#endif /* ^__x86_64__ */
+
+      }
+
+      *virgin &= ~*current;
+
+    }
+
+    current++;
+    virgin++;
+
+  }
+
+  return ret;
+
+}
+
+
 
 /* Get rid of shared memory (atexit handler). */
 
@@ -469,6 +606,8 @@ static void setup_shm(void) {
   trace_bits = shmat(shm_id, NULL, 0);
   
   if (!trace_bits) PFATAL("shmat() failed");
+
+  memset(virgin_bits, 255, MAP_SIZE);
 
 }
 
@@ -534,6 +673,48 @@ static u32 write_results(void) {
     fclose(f);
 
   }
+
+  return ret;
+
+}
+
+
+/* Write results. */
+
+static u32 write_slot_val_file(u8* filename, struct slot_val * list) {
+
+  s32 fd;
+  u32 i, ret = 0;
+
+  if (!strncmp(filename, "/dev/", 5)) {
+
+    fd = open(filename, O_WRONLY, 0600);
+    if (fd < 0) PFATAL("Unable to open '%s'", filename);
+
+  } else if (!strcmp(filename, "-")) {
+
+    fd = dup(1);
+    if (fd < 0) PFATAL("Unable to open stdout");
+
+  } else {
+
+    unlink(filename); /* Ignore errors */
+    fd = open(filename, O_WRONLY | O_CREAT | O_EXCL, 0600);
+    if (fd < 0) PFATAL("Unable to create '%s'", filename);
+
+  }
+
+    FILE* f = fdopen(fd, "w");
+
+    if (!f) PFATAL("fdopen() failed");
+
+    while (list != NULL) {
+        SAYF("slot is %d, value is %lld\n", list->slot, list->val);
+        fprintf(f, "%10u:%u\n", list->slot, list->val);
+        list = list->next;
+    }
+
+    fclose(f);
 
   return ret;
 
@@ -956,6 +1137,34 @@ static void add_to_queue(u8* fname, u32 len, u64 mtime) {
 }
 
 
+// Append to slot_val list
+
+static void add_slot_val(struct slot_val ** list, struct slot_val ** list_top, u64 slot, u32 val) {
+
+    struct slot_val * tmp = slot_edge;
+
+    while (tmp != NULL) {
+        if (tmp->slot == slot) {
+            tmp->val = val;
+            return;
+        }
+        tmp = tmp->next;
+    }
+
+    struct slot_val* s = ck_alloc(sizeof(struct slot_val));
+    s->slot = slot;
+    s->val = val;
+    s->next = NULL;
+
+    if (*list_top) {
+        (*list_top)->next = s;
+        (*list_top) = s;
+    }
+    else (*list) = (*list_top) = s;
+
+}
+
+
 static void read_testcases(void) {
 
   struct dirent **nl;
@@ -1246,8 +1455,10 @@ int main(int argc, char** argv) {
 
   while (queue_cur != NULL) {
 
-    SAYF("queue_cur mtime is: %lld, sec_slot is: %lld, min_slot is: %lld, hour_slot is: %lld\n",\
-     queue_cur->mtime, queue_cur->sec_slot, queue_cur->min_slot, queue_cur->hour_slot);
+    SAYF("current fname is %s, queue_cur mtime is: %lld, sec_slot is: %lld, min_slot is: %lld, hour_slot is: %lld\n",\
+     queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot, queue_cur->min_slot, queue_cur->hour_slot);
+    SAYF("current fname is %s, queue_cur mtime is: %lld, sec_slot is: %lld, min_slot is: %lld, hour_slot is: %lld\n",\
+     queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot, queue_cur->min_slot, queue_cur->hour_slot);
     // create hard link of current item to the out_file
     link_or_copy(queue_cur->fname, out_file);
 
@@ -1264,24 +1475,33 @@ int main(int argc, char** argv) {
     // write the trace
     write_results();
 
+    // classify the trace as log2 based
+#ifdef __x86_64__
+    classify_trace_counts((u64*)trace_bits);
+#else
+    classify_trace_counts((u32*)trace_bits);
+#endif /* ^__x86_64__ */
+
+    // update virgin bits
+    has_new_bits(virgin_bits);
+
+    u64 slot = queue_cur->sec_slot;
+    u32 bitmap_size = count_non_255_bytes(virgin_bits);
+    // SAYF("bitmap_size is %d\n", bitmap_size);
+
+    add_slot_val(&slot_edge, &slot_edge_top, slot, bitmap_size);
+
     // move to the next item in queue
     queue_cur = queue_cur->next;
 
     ck_free(trace_file);
 
   }
-//  run_target(use_argv);
-//
-//  tcnt = write_results();
-//
-//  if (!quiet_mode) {
-//
-//    if (!tcnt) FATAL("No instrumentation detected" cRST);
-//    OKF("Captured %u tuples in '%s'." cRST, tcnt, out_file);
-//
-//  }
-//
-//  exit(child_crashed * 2 + child_timed_out);
+
+  u8 * slot_edge_file = alloc_printf("%s/slot_edge.txt", out_dir);
+
+  write_slot_val_file(slot_edge_file, slot_edge);
+
+  ck_free(slot_edge_file);
 
 }
-
