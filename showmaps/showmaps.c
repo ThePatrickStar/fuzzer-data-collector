@@ -101,8 +101,7 @@ static u8 *in_dir,                    /* Input directory with test cases   */
           *out_file,                  /* File to fuzz, if any              */
           *out_dir,                   /* Working & output directory        */
           *trace_file,                /* File to store the current trace   */
-          *target_path,               /* Path to target binary             */
-          *at_file;                   /* Substitution string for @@        */
+          *target_path;               /* Path to target binary             */
 
 static u32 queued_paths,              /* Total number of queued testcases  */
            exec_tmout;                /* Exec timeout (ms)                 */
@@ -119,8 +118,8 @@ static s32 out_fd,                    /* Persistent fd for out_file        */
 
 static u8  quiet_mode,                /* Hide non-essential messages?      */
            edges_only,                /* Ignore hit counts?                */
-           cmin_mode,                 /* Generate output in afl-cmin mode? */
            binary_mode,               /* Write output as a binary map      */
+           skip_individual,           /* Skip individual trace generation  */
            keep_cores;                /* Allow coredumps?                  */
 
 static volatile u8
@@ -659,14 +658,7 @@ static u32 write_results(void) {
       if (!trace_bits[i]) continue;
       ret++;
 
-      if (cmin_mode) {
-
-        if (child_timed_out) break;
-        if (!caa && child_crashed != cco) break;
-
-        fprintf(f, "%u%u\n", trace_bits[i], i);
-
-      } else fprintf(f, "%06u:%u\n", i, trace_bits[i]);
+      fprintf(f, "%06u:%u\n", i, trace_bits[i]);
 
     }
   
@@ -985,13 +977,15 @@ static void usage(u8* argv0) {
        "Required parameters:\n\n"
 
        "  -i dir        - input directory with test cases\n"
-       "  -o file       - file to write the trace data to\n\n"
+       "  -o file       - output directory\n\n"
 
        "Execution control settings:\n\n"
 
+       "  -f file       - location read by the fuzzed program (stdin)\n"
        "  -t msec       - timeout for each run (none)\n"
        "  -m megs       - memory limit for child process (%u MB)\n"
-       "  -Q            - use binary-only instrumentation (QEMU mode)\n\n"
+       "  -Q            - use binary-only instrumentation (QEMU mode)\n"
+       "  -s            - skip individual trace file generation (speed up) \n\n"
 
        "Other settings:\n\n"
 
@@ -1089,10 +1083,11 @@ void setup_dirs_fds(void) {
   }
 
   /* The directory to store all the traces (same name as input) */
-
-  tmp = alloc_printf("%s/traces", out_dir);
-  if (mkdir(tmp, 0700)) PFATAL("Unable to create '%s'", tmp);
-  ck_free(tmp);
+  if (!skip_individual) {
+    tmp = alloc_printf("%s/traces", out_dir);
+    if (mkdir(tmp, 0700)) PFATAL("Unable to create '%s'", tmp);
+    ck_free(tmp);
+  }
 
   /* Generally useful file descriptors. */
 
@@ -1283,11 +1278,11 @@ static void link_or_copy(u8* old_path, u8* new_path) {
 int main(int argc, char** argv) {
 
   s32 opt;
-  u8  mem_limit_given = 0, timeout_given = 0, qemu_mode = 0;
+  u8  mem_limit_given = 0, timeout_given = 0;
   u32 tcnt;
   char** use_argv;
 
-  while ((opt = getopt(argc,argv,"+i:o:f:m:t:A:eqZQbc")) > 0)
+  while ((opt = getopt(argc,argv,"+i:o:f:m:t:eqbcs")) > 0)
 
     switch (opt) {
 
@@ -1373,29 +1368,6 @@ int main(int argc, char** argv) {
         quiet_mode = 1;
         break;
 
-      case 'Z':
-
-        /* This is an undocumented option to write data in the syntax expected
-           by afl-cmin. Nobody else should have any use for this. */
-
-        cmin_mode  = 1;
-        quiet_mode = 1;
-        break;
-
-      case 'A':
-
-        /* Another afl-cmin specific feature. */
-        at_file = optarg;
-        break;
-
-      case 'Q':
-
-        if (qemu_mode) FATAL("Multiple -Q options not supported");
-        if (!mem_limit_given) mem_limit = MEM_LIMIT_QEMU;
-
-        qemu_mode = 1;
-        break;
-
       case 'b':
 
         /* Secret undocumented mode. Writes output in raw binary format
@@ -1408,6 +1380,12 @@ int main(int argc, char** argv) {
 
         if (keep_cores) FATAL("Multiple -c options not supported");
         keep_cores = 1;
+        break;
+
+      case 's':
+
+        if (skip_individual) FATAL("Multiple -s options not supported");
+        skip_individual = 1;
         break;
 
       default:
@@ -1453,12 +1431,13 @@ int main(int argc, char** argv) {
 
   u8* pure_fname;
 
+  // the main working loop
   while (queue_cur != NULL) {
 
-    SAYF("current fname is %s, queue_cur mtime is: %lld, sec_slot is: %lld, min_slot is: %lld, hour_slot is: %lld\n",\
-     queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot, queue_cur->min_slot, queue_cur->hour_slot);
-    SAYF("current fname is %s, queue_cur mtime is: %lld, sec_slot is: %lld, min_slot is: %lld, hour_slot is: %lld\n",\
-     queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot, queue_cur->min_slot, queue_cur->hour_slot);
+//    SAYF("current fname is %s, queue_cur mtime is: %lld, sec_slot is: %lld, min_slot is: %lld, hour_slot is: %lld\n",\
+//     queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot, queue_cur->min_slot, queue_cur->hour_slot);
+    SAYF("current fname is %s, queue_cur mtime is: %lld, sec_slot is: %lld\n",\
+     queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot);
     // create hard link of current item to the out_file
     link_or_copy(queue_cur->fname, out_file);
 
@@ -1468,12 +1447,18 @@ int main(int argc, char** argv) {
     // delete the out_file
     unlink(out_file);
 
-    // setup the path for the new trace file
-    pure_fname = strrchr(queue_cur->fname, '/');
-    trace_file = alloc_printf("%s/traces/%s.txt", out_dir, pure_fname);
+    if (!skip_individual) {
 
-    // write the trace
-    write_results();
+        // setup the path for the new trace file
+        pure_fname = strrchr(queue_cur->fname, '/');
+        trace_file = alloc_printf("%s/traces/%s.txt", out_dir, pure_fname);
+
+        // write the trace
+        write_results();
+
+        ck_free(trace_file);
+
+    }
 
     // classify the trace as log2 based
 #ifdef __x86_64__
@@ -1493,8 +1478,6 @@ int main(int argc, char** argv) {
 
     // move to the next item in queue
     queue_cur = queue_cur->next;
-
-    ck_free(trace_file);
 
   }
 
