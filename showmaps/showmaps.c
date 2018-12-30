@@ -118,6 +118,7 @@ static s32 out_fd,                    /* Persistent fd for out_file        */
 
 static u8  quiet_mode,                /* Hide non-essential messages?      */
            edges_only,                /* Ignore hit counts?                */
+           entries_only,              /* Only count for N.O. of items?     */
            binary_mode,               /* Write output as a binary map      */
            skip_individual,           /* Skip individual trace generation  */
            keep_cores;                /* Allow coredumps?                  */
@@ -984,13 +985,13 @@ static void usage(u8* argv0) {
        "  -f file       - location read by the fuzzed program (stdin)\n"
        "  -t msec       - timeout for each run (none)\n"
        "  -m megs       - memory limit for child process (%u MB)\n"
-       "  -Q            - use binary-only instrumentation (QEMU mode)\n"
        "  -s            - skip individual trace file generation (speed up) \n\n"
 
        "Other settings:\n\n"
 
        "  -q            - sink program's output and don't show messages\n"
        "  -e            - show edge coverage only, ignore hit counts\n"
+       "  -E            - count for N.O. of entries only, ignore coverage\n"
        "  -c            - allow core dumps\n\n"
 
        "This tool displays raw tuple data captured by AFL instrumentation.\n\n" cRST,
@@ -1083,7 +1084,7 @@ void setup_dirs_fds(void) {
   }
 
   /* The directory to store all the traces (same name as input) */
-  if (!skip_individual) {
+  if (!skip_individual && !entries_only) {
     tmp = alloc_printf("%s/traces", out_dir);
     if (mkdir(tmp, 0700)) PFATAL("Unable to create '%s'", tmp);
     ck_free(tmp);
@@ -1136,7 +1137,7 @@ static void add_to_queue(u8* fname, u32 len, u64 mtime) {
 
 static void add_slot_val(struct slot_val ** list, struct slot_val ** list_top, u64 slot, u32 val) {
 
-    struct slot_val * tmp = slot_edge;
+    struct slot_val * tmp = *list;
 
     while (tmp != NULL) {
         if (tmp->slot == slot) {
@@ -1282,7 +1283,7 @@ int main(int argc, char** argv) {
   u32 tcnt;
   char** use_argv;
 
-  while ((opt = getopt(argc,argv,"+i:o:f:m:t:eqbcs")) > 0)
+  while ((opt = getopt(argc,argv,"+i:o:f:m:t:Eeqbcs")) > 0)
 
     switch (opt) {
 
@@ -1388,103 +1389,132 @@ int main(int argc, char** argv) {
         skip_individual = 1;
         break;
 
+      case 'E':
+
+        if (entries_only) FATAL("Multiple -E options not supported");
+        entries_only = 1;
+        break;
+
       default:
 
         usage(argv[0]);
 
     }
 
-  if (optind == argc || !out_dir || !in_dir) usage(argv[0]);
+    if ((!entries_only && optind == argc) || !out_dir || !in_dir) usage(argv[0]);
 
-  setup_shm();
-  setup_signal_handlers();
+    if (!entries_only) {
+        setup_shm();
+        setup_signal_handlers();
 
-  set_up_environment();
+        set_up_environment();
 
-  find_binary(argv[optind]);
+        find_binary(argv[optind]);
 
-  if (!quiet_mode) {
-    show_banner();
-    ACTF("Executing '%s'...\n", target_path);
-  }
+        if (!quiet_mode) {
+            show_banner();
+            ACTF("Executing '%s'...\n", target_path);
+        }
 
-  use_argv = argv + optind;
+        use_argv = argv + optind;
 
-  detect_file_args(use_argv);
-
-  setup_dirs_fds();
-
-  read_testcases();
-
-  init_count_class16();
-
-  ACTF("Got %d test cases\n", queued_paths);
-
-  // sort the initial seed queue according to mtime
-  quick_sort(queue);
-
-  // update the time slots for seeds
-  update_slots(queue);
-
-  // iterate over the queue
-  queue_cur = queue;
-
-  u8* pure_fname;
-
-  // the main working loop
-  while (queue_cur != NULL) {
-
-//    SAYF("current fname is %s, queue_cur mtime is: %lld, sec_slot is: %lld, min_slot is: %lld, hour_slot is: %lld\n",\
-//     queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot, queue_cur->min_slot, queue_cur->hour_slot);
-    SAYF("current fname is %s, queue_cur mtime is: %lld, sec_slot is: %lld\n",\
-     queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot);
-    // create hard link of current item to the out_file
-    link_or_copy(queue_cur->fname, out_file);
-
-    // run the program against the current item
-    run_target(use_argv);
-
-    // delete the out_file
-    unlink(out_file);
-
-    if (!skip_individual) {
-
-        // setup the path for the new trace file
-        pure_fname = strrchr(queue_cur->fname, '/');
-        trace_file = alloc_printf("%s/traces/%s.txt", out_dir, pure_fname);
-
-        // write the trace
-        write_results();
-
-        ck_free(trace_file);
+        detect_file_args(use_argv);
 
     }
 
-    // classify the trace as log2 based
-#ifdef __x86_64__
-    classify_trace_counts((u64*)trace_bits);
-#else
-    classify_trace_counts((u32*)trace_bits);
-#endif /* ^__x86_64__ */
+    setup_dirs_fds();
 
-    // update virgin bits
-    has_new_bits(virgin_bits);
+    read_testcases();
 
-    u64 slot = queue_cur->sec_slot;
-    u32 bitmap_size = count_non_255_bytes(virgin_bits);
-    // SAYF("bitmap_size is %d\n", bitmap_size);
+    init_count_class16();
 
-    add_slot_val(&slot_edge, &slot_edge_top, slot, bitmap_size);
+    ACTF("Got %d test cases\n", queued_paths);
 
-    // move to the next item in queue
-    queue_cur = queue_cur->next;
+    // sort the initial seed queue according to mtime
+    quick_sort(queue);
 
-  }
+    // update the time slots for seeds
+    update_slots(queue);
 
-  u8 * slot_edge_file = alloc_printf("%s/slot_edge.txt", out_dir);
+    // iterate over the queue
+    queue_cur = queue;
 
-  write_slot_val_file(slot_edge_file, slot_edge);
+    u8* pure_fname;
 
-  ck_free(slot_edge_file);
+    u32 entries_no = 0;
+
+    // the main working loop
+    while (queue_cur != NULL) {
+
+        //    SAYF("current fname is %s, queue_cur mtime is: %lld, sec_slot is: %lld, min_slot is: %lld, hour_slot is: %lld\n",\
+        //     queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot, queue_cur->min_slot, queue_cur->hour_slot);
+        SAYF("current fname is %s, queue_cur mtime is: %lld, sec_slot is: %lld\n",\
+         queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot);
+        u64 slot = queue_cur->sec_slot;
+
+        if (!entries_only) {
+            // create hard link of current item to the out_file
+            link_or_copy(queue_cur->fname, out_file);
+
+            // run the program against the current item
+            run_target(use_argv);
+
+            // delete the out_file
+            unlink(out_file);
+
+            if (!skip_individual) {
+
+                // setup the path for the new trace file
+                pure_fname = strrchr(queue_cur->fname, '/');
+                trace_file = alloc_printf("%s/traces/%s.txt", out_dir, pure_fname);
+
+                // write the trace
+                write_results();
+
+                ck_free(trace_file);
+
+            }
+
+            // classify the trace as log2 based
+        #ifdef __x86_64__
+            classify_trace_counts((u64*)trace_bits);
+        #else
+            classify_trace_counts((u32*)trace_bits);
+        #endif /* ^__x86_64__ */
+
+            // update virgin bits
+            has_new_bits(virgin_bits);
+
+
+            u32 bitmap_size = count_non_255_bytes(virgin_bits);
+            // SAYF("bitmap_size is %d\n", bitmap_size);
+
+            add_slot_val(&slot_edge, &slot_edge_top, slot, bitmap_size);
+
+        }
+
+        entries_no++;
+        add_slot_val(&slot_entry, &slot_entry_top, slot, entries_no);
+
+        // move to the next item in queue
+        queue_cur = queue_cur->next;
+
+    }
+
+    if (!entries_only) {
+
+        u8 * slot_edge_file = alloc_printf("%s/slot_edge.txt", out_dir);
+
+        write_slot_val_file(slot_edge_file, slot_edge);
+
+        ck_free(slot_edge_file);
+
+    }
+
+    u8 * slot_entry_file = alloc_printf("%s/slot_entry.txt", out_dir);
+
+    write_slot_val_file(slot_entry_file, slot_entry);
+
+    ck_free(slot_entry_file);
 
 }

@@ -3,6 +3,7 @@
 showmaps
 test/out/
 test/out-simple/
+test/out-entry/
 
 ### C template
 # Prerequisites
