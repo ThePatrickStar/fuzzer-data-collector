@@ -6,7 +6,7 @@ import os
 def main():
     fuzzer_list = ['cerebro', 'afl', 'aflfast']
 
-    for fuzzer in fuzzer_list:
+    for (f, fuzzer) in enumerate(fuzzer_list):
         if not os.path.exists("data/"+fuzzer):
             os.makedirs("data/"+fuzzer)
         # generate 10 data files for each fuzzer
@@ -19,10 +19,16 @@ def main():
             # generate time slots (sec) for the seeds within 24 hours (86400s)
             slots = random.sample(range(0, 86400), seeds_no)
 
+            if 0 not in slots:
+                slots[0] = 0
+
             slots.sort()
 
             # generate the data no for the seeds
-            data_nos = random.sample(range(5, 3000), seeds_no)
+            data_nos = random.sample(range(5, 3000 - f * 100), seeds_no)
+
+            if 5 not in data_nos:
+                data_nos[0] = 5
 
             data_nos.sort()
 

@@ -2,27 +2,60 @@
     [cerebro]
         # the content in data files are "time(sec):data number"
         data_files = [
-            "test/data/out-0.txt",
-            "test/data/out-1.txt",
-            "test/data/out-2.txt",
-            "test/data/out-3.txt",
-            "test/data/out-4.txt",
-            "test/data/out-5.txt",
-            "test/data/out-6.txt",
-            "test/data/out-7.txt",
-            "test/data/out-8.txt",
-            "test/data/out-9.txt"
+            "test/data/cerebro/out-0.txt",
+            "test/data/cerebro/out-1.txt",
+            "test/data/cerebro/out-2.txt",
+            "test/data/cerebro/out-3.txt",
+            "test/data/cerebro/out-4.txt",
+            "test/data/cerebro/out-5.txt",
+            "test/data/cerebro/out-6.txt",
+            "test/data/cerebro/out-7.txt",
+            "test/data/cerebro/out-8.txt",
+            "test/data/cerebro/out-9.txt"
         ]
-        line_color = ""
-        line_style = ""
+        line_color = "solid"
+        line_style = "xkcd:scarlet"
 
+    [afl]
+        # the content in data files are "time(sec):data number"
+        data_files = [
+            "test/data/afl/out-0.txt",
+            "test/data/afl/out-1.txt",
+            "test/data/afl/out-2.txt",
+            "test/data/afl/out-3.txt",
+            "test/data/afl/out-4.txt",
+            "test/data/afl/out-5.txt",
+            "test/data/afl/out-6.txt",
+            "test/data/afl/out-7.txt",
+            "test/data/afl/out-8.txt",
+            "test/data/afl/out-9.txt"
+        ]
+        line_color = "dashed"
+        line_style = "xkcd:slate blue"
 
+    [aflfast]
+        # the content in data files are "time(sec):data number"
+        data_files = [
+            "test/data/aflfast/out-0.txt",
+            "test/data/aflfast/out-1.txt",
+            "test/data/aflfast/out-2.txt",
+            "test/data/aflfast/out-3.txt",
+            "test/data/aflfast/out-4.txt",
+            "test/data/aflfast/out-5.txt",
+            "test/data/aflfast/out-6.txt",
+            "test/data/aflfast/out-7.txt",
+            "test/data/aflfast/out-8.txt",
+            "test/data/aflfast/out-9.txt"
+        ]
+        line_color = "dashdot"
+        line_style = "xkcd:olive yellow"
 
 [misc]
     # should be one of the followings: "sec", "s", "min", "m", "hour", "h"
     bucket = "sec"
     out_dir = "test/out"
-    ylabel = ""
-    file_postfix = ""
-    project = ""
+    ylabel = "edge N.O."
+    file_postfix = "-edge-time"
+    project = "mjs"
+    # max_time is in hours
     max_time = 24
