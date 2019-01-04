@@ -26,6 +26,7 @@ def parse_config(config_path):
         # sanitize the config
         for fuzzer_name in fuzzers_dict:
             fuzzer = fuzzers_dict[fuzzer_name]
+            fuzzer['name'] = fuzzer_name
             if len(fuzzer["data_files"]) == 0:
                 print("[!] {} has no data file!".format(fuzzer_name))
                 config_valid = False

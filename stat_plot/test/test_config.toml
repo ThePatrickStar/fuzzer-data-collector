@@ -14,8 +14,8 @@
             "test/data/cerebro/out-8.txt",
             "test/data/cerebro/out-9.txt"
         ]
-        line_color = "solid"
-        line_style = "xkcd:scarlet"
+        line_style = "solid"
+        line_color = "xkcd:scarlet"
 
     [fuzzers.afl]
         # the content in data files are "time(sec):data number"
@@ -31,8 +31,8 @@
             "test/data/afl/out-8.txt",
             "test/data/afl/out-9.txt"
         ]
-        line_color = "dashed"
-        line_style = "xkcd:slate blue"
+        line_style = "dashed"
+        line_color = "xkcd:slate blue"
 
     [fuzzers.aflfast]
         # the content in data files are "time(sec):data number"
@@ -48,8 +48,8 @@
             "test/data/aflfast/out-8.txt",
             "test/data/aflfast/out-9.txt"
         ]
-        line_color = "dashdot"
-        line_style = "xkcd:olive yellow"
+        line_style = "dashdot"
+        line_color = "xkcd:olive yellow"
 
 [misc]
     # should be one of the followings: "sec", "s", "min", "m", "hour", "h"
