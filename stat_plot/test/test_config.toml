@@ -1,5 +1,6 @@
 [fuzzers]
-    [cerebro]
+    # sub-tables use "." to connect
+    [fuzzers.cerebro]
         # the content in data files are "time(sec):data number"
         data_files = [
             "test/data/cerebro/out-0.txt",
@@ -16,7 +17,7 @@
         line_color = "solid"
         line_style = "xkcd:scarlet"
 
-    [afl]
+    [fuzzers.afl]
         # the content in data files are "time(sec):data number"
         data_files = [
             "test/data/afl/out-0.txt",
@@ -33,7 +34,7 @@
         line_color = "dashed"
         line_style = "xkcd:slate blue"
 
-    [aflfast]
+    [fuzzers.aflfast]
         # the content in data files are "time(sec):data number"
         data_files = [
             "test/data/aflfast/out-0.txt",
@@ -53,6 +54,8 @@
 [misc]
     # should be one of the followings: "sec", "s", "min", "m", "hour", "h"
     bucket = "sec"
+    # confidence interval to be used
+    confidence_lvl = 0.95
     out_dir = "test/out"
     ylabel = "edge N.O."
     file_postfix = "-edge-time"

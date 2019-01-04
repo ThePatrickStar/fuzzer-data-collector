@@ -1,4 +1,5 @@
 import argparse
+import os
 
 from conf import *
 
@@ -8,8 +9,14 @@ def main():
     parser.add_argument("--config", "-c", required=True, type=str)
     args = parser.parse_args()
 
-    print("config file is {}".format(args.config))
-    parse_config(args.config)
+    config_path = os.path.abspath(args.config)
+
+    print("[*] config file is {}".format(config_path))
+    config_valid, fuzzers_dict, misc_dict = parse_config(config_path)
+
+    if not config_valid:
+        print("[!] config: {} is not valid!".format(config_path))
+        exit(1)
 
 
 if __name__ == "__main__":
