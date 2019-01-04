@@ -21,6 +21,18 @@ def mkdirs(path):
         os.makedirs(path)
 
 
+def display_bucket(bucket):
+    if bucket[0] == 's':
+        return 'sec'
+    elif bucket[0] == 'm':
+        return 'min'
+    elif bucket[0] == 'h':
+        return 'hour'
+    else:
+        # wrong bucket encoding
+        return 'invalid_value'
+
+
 # align data files
 def align_data(fuzzer_dict, misc_dict):
 
@@ -109,18 +121,26 @@ def plot_files(fuzzer_dict, misc_dict, ax):
     set_line_color = 'line_color' in fuzzer_dict
     set_line_style = 'line_style' in fuzzer_dict
 
+    step = 1
+    if misc_dict['bucket'] == 'm':
+        step = 60
+    elif misc_dict['bucket'] == 'h':
+        step = 3600
+
+    bins = [int(x/step) for x in bins[0::step]]
+
     if set_line_color and set_line_style:
-        ax.plot(bins[0:], means[0:], label=fuzzer_name, linestyle=fuzzer_dict['line_style'], color=fuzzer_dict['line_color'])
-        ax.fill_between(bins[0:], mins[0:], maxs[0:], facecolor=fuzzer_dict['line_color'], alpha=0.2)
+        ax.plot(bins[0:], means[0::step], label=fuzzer_name, linestyle=fuzzer_dict['line_style'], color=fuzzer_dict['line_color'])
+        ax.fill_between(bins[0:], mins[0::step], maxs[0::step], facecolor=fuzzer_dict['line_color'], alpha=0.2)
     elif set_line_color:
-        ax.plot(bins[0:], means[0:], label=fuzzer_name, color=fuzzer_dict['line_color'])
-        ax.fill_between(bins[0:], mins[0:], maxs[0:], facecolor=fuzzer_dict['line_color'], alpha=0.2)
+        ax.plot(bins[0:], means[0::step], label=fuzzer_name, color=fuzzer_dict['line_color'])
+        ax.fill_between(bins[0:], mins[0::step], maxs[0::step], facecolor=fuzzer_dict['line_color'], alpha=0.2)
     elif set_line_style:
-        ax.plot(bins[0:], means[0:], label=fuzzer_name, linestyle=fuzzer_dict['line_style'])
-        ax.fill_between(bins[0:], mins[0:], maxs[0:], alpha=0.2)
+        ax.plot(bins[0:], means[0::step], label=fuzzer_name, linestyle=fuzzer_dict['line_style'])
+        ax.fill_between(bins[0:], mins[0::step], maxs[0::step], alpha=0.2)
     else:
-        ax.plot(bins[0:], means[0:], label=fuzzer_name)
-        ax.fill_between(bins[0:], mins[0:], maxs[0:], alpha=0.2)
+        ax.plot(bins[0:], means[0::step], label=fuzzer_name)
+        ax.fill_between(bins[0:], mins[0::step], maxs[0::step], alpha=0.2)
 
 
 def generate_plots(fuzzers_dict, misc_dict):
@@ -137,7 +157,7 @@ def generate_plots(fuzzers_dict, misc_dict):
     filename_pdf = base_filename + '.pdf'
     filename_png = base_filename + '.png'
 
-    ax.set(xlabel='time (sec)', ylabel=misc_dict['ylabel'])
+    ax.set(xlabel='time ({})'.format(display_bucket(misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
     ax.legend()
     fig.savefig(filename_pdf)
     fig.savefig(filename_png)

@@ -53,7 +53,7 @@
 
 [misc]
     # should be one of the followings: "sec", "s", "min", "m", "hour", "h"
-    bucket = "sec"
+    bucket = "min"
     # confidence interval to be used
     confidence_lvl = 0.95
     out_dir = "test/out"

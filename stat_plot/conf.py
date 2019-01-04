@@ -37,6 +37,7 @@ def parse_config(config_path):
             bucket_valid, bucket = check_bucket(misc_dict["bucket"])
             if not bucket_valid:
                 config_valid = False
+            misc_dict["bucket"] = bucket
 
         if "confidence_lvl" not in misc_dict:
             misc_dict["confidence_lvl"] = 0.95
