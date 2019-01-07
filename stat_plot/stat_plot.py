@@ -33,6 +33,16 @@ def display_bucket(bucket):
         return 'invalid_value'
 
 
+def get_step(misc_dict):
+    step = 1
+    if misc_dict['bucket'] == 'm':
+        step = 60
+    elif misc_dict['bucket'] == 'h':
+        step = 3600
+
+    return step
+
+
 # align data files
 def align_data(fuzzer_dict, misc_dict):
 
@@ -45,6 +55,9 @@ def align_data(fuzzer_dict, misc_dict):
     mkdirs(aligned_dir)
 
     new_data_files = []
+
+    print("[*] aligning data for {}".format(fuzzer_name))
+
     for (j, data_file) in enumerate(data_files):
         slots = []
         vals = []
@@ -78,14 +91,45 @@ def align_data(fuzzer_dict, misc_dict):
     fuzzer_dict['data_files'] = new_data_files
 
 
-# add plots to ax; write the computed data out
-# TODO: use bucket
-def plot_files(fuzzer_dict, misc_dict, ax):
-    entire_data_row = []
-
-    align_data(fuzzer_dict, misc_dict)
+# plot for every data file of the fuzzer; n is the id for the figure
+def detailed_plot(fuzzer_dict, misc_dict, n):
+    fig = plt.figure(n)
+    ax = fig.add_subplot(111)
 
     data_files = fuzzer_dict['data_files']
+    fuzzer_name = fuzzer_dict['name']
+    print('[*] generating detailed plots for {}'.format(fuzzer_name))
+
+    step = get_step(misc_dict)
+
+    for (i, data_file) in enumerate(data_files):
+        with open(data_file) as df:
+            lines = df.readlines()
+            ys = [int(x) for x in lines]
+            ys = ys[0::step]
+            bins = range(0, len(ys))
+            ax.plot(bins, ys, label=fuzzer_name + str(i))
+
+            out_dir = misc_dict['out_dir'] + '/detailed/' + fuzzer_name + '/'
+            mkdirs(out_dir)
+            base_filename = out_dir + misc_dict["project"] + "_detailed" + misc_dict["file_postfix"]
+            filename_pdf = base_filename + '.pdf'
+            filename_png = base_filename + '.png'
+
+            ax.set(xlabel='time ({})'.format(display_bucket(misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
+            ax.legend()
+            fig.savefig(filename_pdf)
+            fig.savefig(filename_png)
+
+
+# add plots to ax; write the computed data out
+def plot_files(fuzzer_dict, misc_dict, ax):
+    entire_data_rows = []
+
+    data_files = fuzzer_dict['data_files']
+    fuzzer_name = fuzzer_dict['name']
+
+    print('[*] generating overall plots for {}'.format(fuzzer_name))
 
     for data_file in data_files:
         data_row = []
@@ -93,9 +137,9 @@ def plot_files(fuzzer_dict, misc_dict, ax):
             lines = df.readlines()
             for line in lines:
                 data_row.append(int(line))
-        entire_data_row.append(data_row)
+        entire_data_rows.append(data_row)
 
-    entire_data_col = row_to_col(entire_data_row)
+    entire_data_col = row_to_col(entire_data_rows)
 
     means = []
     mins = []
@@ -111,8 +155,6 @@ def plot_files(fuzzer_dict, misc_dict, ax):
     data_dir = misc_dict['out_dir'] + '/' + 'stat_data/'
     mkdirs(data_dir)
 
-    fuzzer_name = fuzzer_dict['name']
-
     with open(data_dir + fuzzer_name + "-mean-confi.txt", "w") as df:
         for (idx, mean) in enumerate(means):
             df.write("{},{},{}\n".format(mean, mins[idx], maxs[idx]))
@@ -121,11 +163,7 @@ def plot_files(fuzzer_dict, misc_dict, ax):
     set_line_color = 'line_color' in fuzzer_dict
     set_line_style = 'line_style' in fuzzer_dict
 
-    step = 1
-    if misc_dict['bucket'] == 'm':
-        step = 60
-    elif misc_dict['bucket'] == 'h':
-        step = 3600
+    step = get_step(misc_dict)
 
     bins = [int(x/step) for x in bins[0::step]]
 
@@ -144,12 +182,13 @@ def plot_files(fuzzer_dict, misc_dict, ax):
 
 
 def generate_plots(fuzzers_dict, misc_dict):
-    fig = plt.figure(1)
+    fig = plt.figure(len(fuzzers_dict))
     ax = fig.add_subplot(111)
 
-    for fuzzer_name in fuzzers_dict:
-        print('[*] generating plots for {}'.format(fuzzer_name))
+    for (n, fuzzer_name) in enumerate(fuzzers_dict):
         fuzzer_dict = fuzzers_dict[fuzzer_name]
+        align_data(fuzzer_dict, misc_dict)
+        detailed_plot(fuzzer_dict, misc_dict, n)
         plot_files(fuzzer_dict, misc_dict, ax)
 
     out_dir = misc_dict['out_dir'] + '/'
