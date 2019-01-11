@@ -118,6 +118,7 @@ static s32 out_fd,                    /* Persistent fd for out_file        */
 
 static u8  quiet_mode,                /* Hide non-essential messages?      */
            edges_only,                /* Ignore hit counts?                */
+           use_stdin = 1,             /* Target program read from stdin?   */
            entries_only,              /* Only count for N.O. of items?     */
            binary_mode,               /* Write output as a binary map      */
            skip_individual,           /* Skip individual trace generation  */
@@ -794,6 +795,18 @@ static void run_target(char** argv) {
 
     setsid();
 
+    if (use_stdin) {
+        FILE* temp;
+        s32 out_fd;
+        temp = fopen(out_file, "r");
+        out_fd = fileno(temp);
+        s32 ret = dup2(out_fd, 0);
+        if (ret == -1) {
+            FATAL("Error dup2 for stdin: message is %s", strerror(errno));
+        }
+        close(out_fd);
+    }
+
     execv(target_path, argv);
 
     *(u32*)trace_bits = EXEC_FAIL_SIG;
@@ -921,18 +934,20 @@ void detect_file_args(char** argv) {
 
   if (!cwd) PFATAL("getcwd() failed");
 
+  /* If we don't have a file name chosen yet, use a safe default. */
+
+  if (!out_file)
+    out_file = alloc_printf("%s/.cur_input", out_dir);
+
   while (argv[i]) {
 
     u8* aa_loc = strstr(argv[i], "@@");
 
     if (aa_loc) {
 
+      use_stdin = 0;
+
       u8 *aa_subst, *n_arg;
-
-      /* If we don't have a file name chosen yet, use a safe default. */
-
-      if (!out_file)
-        out_file = alloc_printf("%s/.cur_input", out_dir);
 
       /* Be sure that we're always using fully-qualified paths. */
 
