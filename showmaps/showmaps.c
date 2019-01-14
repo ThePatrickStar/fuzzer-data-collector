@@ -104,6 +104,7 @@ static u8 *in_dir,                    /* Input directory with test cases   */
           *target_path;               /* Path to target binary             */
 
 static u32 queued_paths,              /* Total number of queued testcases  */
+           skip_no = 0,               /* no of files to skip for time count*/
            exec_tmout;                /* Exec timeout (ms)                 */
 
 static u64 min_mtime,                 /* Min mtime of all initial seeds    */
@@ -1007,6 +1008,7 @@ static void usage(u8* argv0) {
        "  -q            - sink program's output and don't show messages\n"
        "  -e            - show edge coverage only, ignore hit counts\n"
        "  -E            - count for N.O. of entries only, ignore coverage\n"
+       "  -S number     - skip the number of files for start time counting\n"
        "  -c            - allow core dumps\n\n"
 
        "This tool displays raw tuple data captured by AFL instrumentation.\n\n" cRST,
@@ -1127,13 +1129,17 @@ static void add_to_queue(u8* fname, u32 len, u64 mtime) {
   q->mtime        = mtime;
   q->prev         = NULL;
 
-  if (queued_paths == 0) {
-    max_mtime = mtime;
-    min_mtime = mtime;
-  }
+  if (queued_paths >= skip_no) {
 
-  if (mtime >= max_mtime) max_mtime = mtime;
-  if (mtime <= min_mtime) min_mtime = mtime;
+    if (queued_paths == skip_no) {
+      max_mtime = mtime;
+      min_mtime = mtime;
+    }
+
+    if (mtime >= max_mtime) max_mtime = mtime;
+    if (mtime <= min_mtime) min_mtime = mtime;
+
+  }
 
   if (queue_top) {
 
@@ -1294,11 +1300,11 @@ static void link_or_copy(u8* old_path, u8* new_path) {
 int main(int argc, char** argv) {
 
   s32 opt;
-  u8  mem_limit_given = 0, timeout_given = 0;
+  u8  mem_limit_given = 0, timeout_given = 0, skip_no_given = 0;
   u32 tcnt;
   char** use_argv;
 
-  while ((opt = getopt(argc,argv,"+i:o:f:m:t:Eeqbcs")) > 0)
+  while ((opt = getopt(argc,argv,"+i:o:f:m:t:S:Eeqbcs")) > 0)
 
     switch (opt) {
 
@@ -1369,6 +1375,15 @@ int main(int argc, char** argv) {
             FATAL("Dangerously low value of -t");
 
         }
+
+        break;
+
+      case 'S':
+
+        if (skip_no_given) FATAL("Multiple -S options not supported");
+        skip_no_given = 1;
+
+        skip_no = atoi(optarg);
 
         break;
 
@@ -1456,7 +1471,7 @@ int main(int argc, char** argv) {
 
     u8* pure_fname;
 
-    u32 entries_no = 0;
+    u32 entries_no = 0, current_no = 0;
 
     // the main working loop
     while (queue_cur != NULL) {
@@ -1503,16 +1518,18 @@ int main(int argc, char** argv) {
 
             u32 bitmap_size = count_non_255_bytes(virgin_bits);
             // SAYF("bitmap_size is %d\n", bitmap_size);
-
-            add_slot_val(&slot_edge, &slot_edge_top, slot, bitmap_size);
+            if (current_no > skip_no)
+                add_slot_val(&slot_edge, &slot_edge_top, slot, bitmap_size);
 
         }
 
         entries_no++;
-        add_slot_val(&slot_entry, &slot_entry_top, slot, entries_no);
+        if (current_no > skip_no)
+            add_slot_val(&slot_entry, &slot_entry_top, slot, entries_no);
 
         // move to the next item in queue
         queue_cur = queue_cur->next;
+        current_no++;
 
     }
 
