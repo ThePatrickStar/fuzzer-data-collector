@@ -183,6 +183,42 @@ def plot_files(fuzzer_dict, misc_dict, ax):
         ax.fill_between(bins[0:], mins[0::step], maxs[0::step], alpha=0.2)
 
 
+def student_t_test(filename, open_mode, fuzzers_dict):
+    with open(filename, open_mode) as gsf:
+        checked = []
+        gsf.write("### Student's t test ###\n")
+        for fuzzer_name1 in fuzzers_dict:
+            for fuzzer_name2 in fuzzers_dict:
+                if not fuzzer_name1 == fuzzer_name2 and not (fuzzer_name1, fuzzer_name2) in checked:
+                    f1 = fuzzers_dict[fuzzer_name1]
+                    f2 = fuzzers_dict[fuzzer_name2]
+                    checked.append((fuzzer_name1, fuzzer_name2))
+                    checked.append((fuzzer_name2, fuzzer_name1))
+
+                    p_value = scipy.stats.ttest_ind(f1['final_vals'], f2['final_vals'])[1]
+
+                    gsf.write("pvalue: {} --- {} : {}\n".format(fuzzer_name1, fuzzer_name2, p_value))
+        gsf.write("\n")
+
+
+def mw_u_test(filename, open_mode, fuzzers_dict):
+    with open(filename, open_mode) as gsf:
+        checked = []
+        gsf.write("### Mann Whitney u test ###\n")
+        for fuzzer_name1 in fuzzers_dict:
+            for fuzzer_name2 in fuzzers_dict:
+                if not fuzzer_name1 == fuzzer_name2 and not (fuzzer_name1, fuzzer_name2) in checked:
+                    f1 = fuzzers_dict[fuzzer_name1]
+                    f2 = fuzzers_dict[fuzzer_name2]
+                    checked.append((fuzzer_name1, fuzzer_name2))
+                    checked.append((fuzzer_name2, fuzzer_name1))
+
+                    p_value = scipy.stats.mannwhitneyu(f1['final_vals'], f2['final_vals'])[1]
+
+                    gsf.write("pvalue: {} --- {} : {}\n".format(fuzzer_name1, fuzzer_name2, p_value))
+        gsf.write("\n")
+
+
 def generate_plots(fuzzers_dict, misc_dict):
     fig = plt.figure(len(fuzzers_dict))
     ax = fig.add_subplot(111)
@@ -199,35 +235,9 @@ def generate_plots(fuzzers_dict, misc_dict):
     filename_png = base_filename + '.png'
     general_stats_file = out_dir + misc_dict["project"] + "_overall_stats" + misc_dict["file_postfix"] + ".txt"
 
-    with open(general_stats_file, 'w') as gsf:
-        checked = []
-        gsf.write("### Student's t test ###\n")
-        for fuzzer_name1 in fuzzers_dict:
-            for fuzzer_name2 in fuzzers_dict:
-                if not fuzzer_name1 == fuzzer_name2 and not (fuzzer_name1, fuzzer_name2) in checked:
-                    f1 = fuzzers_dict[fuzzer_name1]
-                    f2 = fuzzers_dict[fuzzer_name2]
-                    checked.append((fuzzer_name1, fuzzer_name2))
-                    checked.append((fuzzer_name2, fuzzer_name1))
+    student_t_test(general_stats_file, 'w', fuzzers_dict)
 
-                    p_value = scipy.stats.ttest_ind(f1['final_vals'], f2['final_vals'])[1]
-
-                    gsf.write("pvalue: {} --- {} : {}\n".format(fuzzer_name1, fuzzer_name2, p_value))
-
-    with open(general_stats_file, 'a') as gsf:
-        checked = []
-        gsf.write("### Mann Whitney u test ###\n")
-        for fuzzer_name1 in fuzzers_dict:
-            for fuzzer_name2 in fuzzers_dict:
-                if not fuzzer_name1 == fuzzer_name2 and not (fuzzer_name1, fuzzer_name2) in checked:
-                    f1 = fuzzers_dict[fuzzer_name1]
-                    f2 = fuzzers_dict[fuzzer_name2]
-                    checked.append((fuzzer_name1, fuzzer_name2))
-                    checked.append((fuzzer_name2, fuzzer_name1))
-
-                    p_value = scipy.stats.mannwhitneyu(f1['final_vals'], f2['final_vals'])[1]
-
-                    gsf.write("pvalue: {} --- {} : {}\n".format(fuzzer_name1, fuzzer_name2, p_value))
+    mw_u_test(general_stats_file, 'a', fuzzers_dict)
 
     ax.set(xlabel='time ({})'.format(display_bucket(misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
     ax.legend()

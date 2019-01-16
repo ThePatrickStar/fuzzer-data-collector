@@ -19,7 +19,10 @@ def main():
         print("[!] config: {} is not valid!".format(config_path))
         exit(1)
 
-    generate_plots(fuzzers_dict, misc_dict)
+    if misc_dict['stat_type'] == 'overall':
+        generate_plots(fuzzers_dict, misc_dict)
+    elif misc_dict['stat_type'] == 'stest':
+        pass
 
 
 if __name__ == "__main__":

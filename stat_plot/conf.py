@@ -31,22 +31,42 @@ def parse_config(config_path):
                 print("[!] {} has no data file!".format(fuzzer_name))
                 config_valid = False
 
-        if "bucket" not in misc_dict:
-            misc_dict["bucket"] = ["s"]
-        else:
-            bucket_valid, bucket = check_bucket(misc_dict["bucket"])
-            if not bucket_valid:
-                config_valid = False
-            misc_dict["bucket"] = bucket
+        if 'stat_type' not in misc_dict:
+            print("[!] [misc] table misses 'stat_type'!")
+            config_valid = False
 
-        if "confidence_lvl" not in misc_dict:
-            misc_dict["confidence_lvl"] = 0.95
+        valid_stat_types = ['overall', 'stest']
+        if misc_dict['stat_type'] not in valid_stat_types:
+            print("[!] invalid stat_type: {}".format(misc_dict['stat_type']))
+            config_valid = False
 
-        required_keys = ["out_dir", "ylabel", "file_postfix", "project", "max_time"]
+        if misc_dict['stat_type'] == 'overall':
 
-        for r_key in required_keys:
-            if r_key not in misc_dict:
-                print("[!] {} (required) is missing is [misc]!".format(r_key))
-                config_valid = False
+            if "bucket" not in misc_dict:
+                misc_dict["bucket"] = ["s"]
+            else:
+                bucket_valid, bucket = check_bucket(misc_dict["bucket"])
+                if not bucket_valid:
+                    config_valid = False
+                misc_dict["bucket"] = bucket
+
+            if "confidence_lvl" not in misc_dict:
+                misc_dict["confidence_lvl"] = 0.95
+
+            required_keys = ["out_dir", "ylabel", "file_postfix", "project", "max_time"]
+
+            for r_key in required_keys:
+                if r_key not in misc_dict:
+                    print("[!] {} (required) is missing is [misc]!".format(r_key))
+                    config_valid = False
+
+        elif misc_dict['stat_type'] == 'stest':
+
+            required_keys = ["out_dir", "project", "file_postfix"]
+
+            for r_key in required_keys:
+                if r_key not in misc_dict:
+                    print("[!] {} (required) is missing is [misc]!".format(r_key))
+                    config_valid = False
 
         return config_valid, fuzzers_dict, misc_dict
