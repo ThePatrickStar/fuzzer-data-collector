@@ -139,7 +139,7 @@
 
 /* Maximum size of input file, in bytes (keep under 100MB): */
 
-#define MAX_FILE            8192
+#define MAX_FILE            (10 * 1024 * 1024)
 
 /* The same, for the test case minimizer: */
 
