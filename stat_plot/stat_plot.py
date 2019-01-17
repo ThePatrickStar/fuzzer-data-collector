@@ -3,6 +3,8 @@ import numpy as np
 import scipy.stats
 import os
 
+from matplotlib.patches import Polygon
+
 
 def mean_confidence_interval(data, confidence):
     a = 1.0 * np.array(data)
@@ -302,3 +304,73 @@ def generate_stat_data(fuzzers_dict, misc_dict):
     mw_u_test(general_stats_file, 'a', fuzzers_dict)
 
     calculate_a12s(general_stats_file, 'a', fuzzers_dict)
+
+
+def generate_box_plots(fuzzers_dict, misc_dict):
+    fig = plt.figure(len(fuzzers_dict))
+    ax = fig.add_subplot(111)
+
+    # fill in the raw data
+    # the data for the box plot
+    box_data = []
+    box_colors = []
+    line_styles = []
+    fuzzer_names = list(fuzzers_dict.keys())
+    fuzzer_names.sort()
+    for fuzzer_name in fuzzer_names:
+        fuzzer = fuzzers_dict[fuzzer_name]
+        # use only the first data file
+        data_file = fuzzer['data_files'][0]
+
+        box_colors.append(fuzzer['box_color'])
+
+        line_styles.append(fuzzer['line_style'])
+
+        if not os.path.exists(data_file):
+            fuzzer['final_vals'] = []
+            box_data.append(fuzzer['final_vals'])
+            continue
+
+        with open(data_file) as df:
+            lines = df.readlines()
+            fuzzer['final_vals'] = [float(x) for x in lines]
+            box_data.append(fuzzer['final_vals'])
+
+    out_dir = misc_dict['out_dir'] + '/'
+    mkdirs(out_dir)
+    base_filename = out_dir + misc_dict["project"] + misc_dict["file_postfix"]
+    filename_pdf = base_filename + '.pdf'
+    filename_png = base_filename + '.png'
+
+    # notch may look weird
+    # https://stackoverflow.com/questions/26291082/weird-behavior-of-matplotlibs-boxplot-when-using-the-notch-shape
+    bp = ax.boxplot(box_data, labels=fuzzer_names, sym='k+', notch=misc_dict['notch'], patch_artist=True, widths=0.75)
+
+    # this might be buggy as the order of bp['boxes'] may not follow the specified order
+    for box, color, line_style in zip(bp['boxes'], box_colors, line_styles):
+        box.set(facecolor=color)
+        # box.set(linestyle=line_style)
+
+    # this is buggy
+    # ['whiskers', 'fliers', 'means', 'medians', 'caps']
+    # for whisker, median, cap, line_style in zip(bp['whiskers'], bp['medians'], bp['caps'], line_styles):
+    #     whisker.set(linestyle=line_style)
+    #     median.set(linestyle=line_style)
+    #     cap.set(linestyle=line_style)
+    #     print("haha")
+    #     print(cap.get_linestyle())
+
+    # this works, but it's for all boxes
+    # for element in ['whiskers', 'means', 'medians', 'caps']:
+    #     plt.setp(bp[element], color='red', linestyle="dashed")
+
+    for median in bp['medians']:
+        median.set(color='k', linewidth=1.5)
+        x, y = median.get_data()
+        xn = (x-(x.sum()/2.))*0.5 + (x.sum()/2.)
+        ax.plot(xn, y, color="k", linewidth=5, solid_capstyle="butt", zorder=4)
+
+    ax.set(title=misc_dict['plot_title'])
+
+    fig.savefig(filename_pdf)
+    fig.savefig(filename_png)

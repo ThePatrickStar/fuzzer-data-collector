@@ -1,0 +1,30 @@
+[fuzzers]
+    # sub-tables use "." to connect
+    [fuzzers.afl]
+        data_files = [
+            "test/data_boxplot/out_afl.txt"
+        ]
+        line_style = "dashed"
+        box_color = "xkcd:slate blue"
+
+    [fuzzers.aflfast]
+        data_files = [
+            "test/data_boxplot/out_aflfast.txt"
+        ]
+        line_style = "dashdot"
+        box_color = "xkcd:olive yellow"
+
+    [fuzzers.cerebro]
+        data_files = [
+            "test/data_boxplot/out_cerebro.txt"
+        ]
+        line_style = "solid"
+        box_color = "xkcd:scarlet"
+
+[misc]
+    out_dir = "test/out_boxplot"
+    file_postfix = "-time-to-exposure"
+    project = "mjs-bug1"
+    stat_type = "boxplot"
+    notch = false
+    plot_title = "mjs-bug1 time-to-exposure"

@@ -27,6 +27,11 @@ def parse_config(config_path):
         for fuzzer_name in fuzzers_dict:
             fuzzer = fuzzers_dict[fuzzer_name]
             fuzzer['name'] = fuzzer_name
+            if 'line_style' not in fuzzer:
+                fuzzer['line_style'] = 'solid'
+            # only for boxplot stat_type
+            if 'box_color' not in fuzzer:
+                fuzzer['box_color'] = 'white'
             if len(fuzzer["data_files"]) == 0:
                 print("[!] {} has no data file!".format(fuzzer_name))
                 config_valid = False
@@ -35,7 +40,7 @@ def parse_config(config_path):
             print("[!] [misc] table misses 'stat_type'!")
             config_valid = False
 
-        valid_stat_types = ['overall', 'stest']
+        valid_stat_types = ['overall', 'stest', 'boxplot']
         if misc_dict['stat_type'] not in valid_stat_types:
             print("[!] invalid stat_type: {}".format(misc_dict['stat_type']))
             config_valid = False
@@ -63,6 +68,15 @@ def parse_config(config_path):
         elif misc_dict['stat_type'] == 'stest':
 
             required_keys = ["out_dir", "project", "file_postfix"]
+
+            for r_key in required_keys:
+                if r_key not in misc_dict:
+                    print("[!] {} (required) is missing is [misc]!".format(r_key))
+                    config_valid = False
+
+        elif misc_dict['stat_type'] == 'boxplot':
+
+            required_keys = ["out_dir", "project", "file_postfix", "notch", 'plot_title']
 
             for r_key in required_keys:
                 if r_key not in misc_dict:
