@@ -22,7 +22,7 @@ def main():
     if misc_dict['stat_type'] == 'overall':
         generate_plots(fuzzers_dict, misc_dict)
     elif misc_dict['stat_type'] == 'stest':
-        pass
+        generate_stat_data(fuzzers_dict, misc_dict)
 
 
 if __name__ == "__main__":

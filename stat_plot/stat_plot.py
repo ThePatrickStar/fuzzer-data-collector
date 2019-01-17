@@ -198,6 +198,7 @@ def student_t_test(filename, open_mode, fuzzers_dict):
                     p_value = scipy.stats.ttest_ind(f1['final_vals'], f2['final_vals'])[1]
 
                     gsf.write("pvalue: {} --- {} : {}\n".format(fuzzer_name1, fuzzer_name2, p_value))
+                    gsf.write("------------------\n")
         gsf.write("\n")
 
 
@@ -216,6 +217,42 @@ def mw_u_test(filename, open_mode, fuzzers_dict):
                     p_value = scipy.stats.mannwhitneyu(f1['final_vals'], f2['final_vals'])[1]
 
                     gsf.write("pvalue: {} --- {} : {}\n".format(fuzzer_name1, fuzzer_name2, p_value))
+                    gsf.write("------------------\n")
+        gsf.write("\n")
+
+
+# calculate the chance of f1s < f2s
+def calculate_a12(max_pop, f1s, f2s):
+    numerator = 0
+    denominator = float(max_pop * max_pop)
+    for first_val in f1s:
+        for second_val in f2s:
+            if first_val < second_val:
+                numerator += 1
+            elif first_val == second_val:
+                numerator += 0.5
+    a12 = numerator / denominator
+    return a12
+
+
+def calculate_a12s(filename, open_mode, fuzzers_dict):
+    with open(filename, open_mode) as gsf:
+        checked = []
+        gsf.write("### A12 values ###\n")
+        for fuzzer_name1 in fuzzers_dict:
+            for fuzzer_name2 in fuzzers_dict:
+                if not fuzzer_name1 == fuzzer_name2 and not (fuzzer_name1, fuzzer_name2) in checked:
+                    f1 = fuzzers_dict[fuzzer_name1]
+                    f2 = fuzzers_dict[fuzzer_name2]
+                    checked.append((fuzzer_name1, fuzzer_name2))
+                    checked.append((fuzzer_name2, fuzzer_name1))
+
+                    # assume f1 and f2 have the same len
+                    a12 = calculate_a12(len(f1['final_vals']), f1['final_vals'], f2['final_vals'])
+
+                    gsf.write("A12: {} <= {} : {}\n".format(fuzzer_name1, fuzzer_name2, a12))
+                    gsf.write("A12: {} >= {} : {}\n".format(fuzzer_name1, fuzzer_name2, (1.0-a12)))
+                    gsf.write("------------------\n")
         gsf.write("\n")
 
 
@@ -243,3 +280,25 @@ def generate_plots(fuzzers_dict, misc_dict):
     ax.legend()
     fig.savefig(filename_pdf)
     fig.savefig(filename_png)
+
+
+def generate_stat_data(fuzzers_dict, misc_dict):
+
+    # fill in the raw data
+    for fuzzer_name in fuzzers_dict:
+        fuzzer = fuzzers_dict[fuzzer_name]
+        # use only the first data file
+        data_file = fuzzer['data_files'][0]
+        with open(data_file) as df:
+            lines = df.readlines()
+            fuzzer['final_vals'] = [int(x) for x in lines]
+
+    out_dir = misc_dict['out_dir'] + '/'
+    mkdirs(out_dir)
+    general_stats_file = out_dir + misc_dict["project"] + "_overall_stats" + misc_dict["file_postfix"] + ".txt"
+
+    student_t_test(general_stats_file, 'w', fuzzers_dict)
+
+    mw_u_test(general_stats_file, 'a', fuzzers_dict)
+
+    calculate_a12s(general_stats_file, 'a', fuzzers_dict)
