@@ -215,10 +215,11 @@ def mw_u_test(filename, open_mode, fuzzers_dict):
                     f2 = fuzzers_dict[fuzzer_name2]
                     checked.append((fuzzer_name1, fuzzer_name2))
                     checked.append((fuzzer_name2, fuzzer_name1))
-
-                    p_value = scipy.stats.mannwhitneyu(f1['final_vals'], f2['final_vals'])[1]
-
-                    gsf.write("pvalue: {} --- {} : {}\n".format(fuzzer_name1, fuzzer_name2, p_value))
+                    try:
+                        p_value = scipy.stats.mannwhitneyu(f1['final_vals'], f2['final_vals'])[1]
+                        gsf.write("pvalue: {} --- {} : {}\n".format(fuzzer_name1, fuzzer_name2, p_value))
+                    except ValueError as e:
+                        gsf.write("ERROR: {} --- {} : {}\n".format(fuzzer_name1, fuzzer_name2, e))
                     gsf.write("------------------\n")
         gsf.write("\n")
 
@@ -277,6 +278,8 @@ def generate_plots(fuzzers_dict, misc_dict):
     student_t_test(general_stats_file, 'w', fuzzers_dict)
 
     mw_u_test(general_stats_file, 'a', fuzzers_dict)
+
+    calculate_a12s(general_stats_file, 'a', fuzzers_dict)
 
     ax.set(xlabel='time ({})'.format(display_bucket(misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
     ax.legend()
