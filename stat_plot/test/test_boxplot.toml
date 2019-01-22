@@ -27,4 +27,5 @@
     project = "mjs-bug1"
     stat_type = "boxplot"
     notch = false
-    plot_title = "mjs-bug1 time-to-exposure"
+    plot_title = "mjs-bug1 time-to-exposure (hour)"
+    ylim = [0, 20]

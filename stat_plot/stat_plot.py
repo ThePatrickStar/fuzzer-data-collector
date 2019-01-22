@@ -373,6 +373,9 @@ def generate_box_plots(fuzzers_dict, misc_dict):
         xn = (x-(x.sum()/2.))*0.5 + (x.sum()/2.)
         ax.plot(xn, y, color="k", linewidth=5, solid_capstyle="butt", zorder=4)
 
+    if 'ylim' in misc_dict:
+        ax.set_ylim(misc_dict['ylim'])
+
     ax.set(title=misc_dict['plot_title'])
 
     fig.savefig(filename_pdf)

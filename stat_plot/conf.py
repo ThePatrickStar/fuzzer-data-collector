@@ -83,4 +83,9 @@ def parse_config(config_path):
                     print("[!] {} (required) is missing is [misc]!".format(r_key))
                     config_valid = False
 
+            if 'ylim' in misc_dict:
+                # TODO: add type check
+                if len(misc_dict['ylim']) != 2:
+                    print('[!] invalid ylim: {} in [misc]!'.format(misc_dict['ylim']))
+
         return config_valid, fuzzers_dict, misc_dict
