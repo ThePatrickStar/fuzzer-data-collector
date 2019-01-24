@@ -380,7 +380,7 @@ def generate_box_plots(fuzzers_dict, misc_dict):
         fuzzer = fuzzers_dict[fuzzer_name]
         y = fuzzer['final_vals']
         x = np.random.normal(1+i, 0.1, size=len(y))
-        ax.scatter(x, y, c=fuzzer['box_color'], alpha=0.8)
+        ax.scatter(x, y, c=fuzzer['box_color'], alpha=0.8, s=100)
 
     if 'ylim' in misc_dict:
         ax.set_ylim(misc_dict['ylim'])
@@ -389,9 +389,12 @@ def generate_box_plots(fuzzers_dict, misc_dict):
 
     ax.set(title=misc_dict['plot_title'])
 
-    for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
-                     ax.get_xticklabels() + ax.get_yticklabels()):
-        item.set_fontsize(15)
+    for item in ([ax.title, ax.xaxis.label] +
+                     ax.get_xticklabels()):
+        item.set_fontsize(30)
+
+    for item in (ax.get_yticklabels()):
+        item.set_fontsize(20)
 
     fig.savefig(filename_pdf)
     fig.savefig(filename_png)
