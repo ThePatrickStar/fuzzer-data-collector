@@ -347,11 +347,13 @@ def generate_box_plots(fuzzers_dict, misc_dict):
 
     # notch may look weird
     # https://stackoverflow.com/questions/26291082/weird-behavior-of-matplotlibs-boxplot-when-using-the-notch-shape
-    bp = ax.boxplot(box_data, labels=fuzzer_names, sym='k+', notch=misc_dict['notch'], patch_artist=True, widths=0.75)
+    bp = ax.boxplot(box_data, labels=fuzzer_names, sym='k+', notch=misc_dict['notch']
+                    , patch_artist=False, widths=0.5, showfliers=False)
 
     # this might be buggy as the order of bp['boxes'] may not follow the specified order
-    for box, color, line_style in zip(bp['boxes'], box_colors, line_styles):
-        box.set(facecolor=color)
+    # this is to set the color for the boxes
+    # for box, color, line_style in zip(bp['boxes'], box_colors, line_styles):
+    #     box.set(facecolor=color)
         # box.set(linestyle=line_style)
 
     # this is buggy
@@ -373,10 +375,23 @@ def generate_box_plots(fuzzers_dict, misc_dict):
         xn = (x-(x.sum()/2.))*0.5 + (x.sum()/2.)
         ax.plot(xn, y, color="k", linewidth=5, solid_capstyle="butt", zorder=4)
 
+    # plot the dots (scatter)
+    for (i, fuzzer_name) in enumerate(fuzzer_names):
+        fuzzer = fuzzers_dict[fuzzer_name]
+        y = fuzzer['final_vals']
+        x = np.random.normal(1+i, 0.1, size=len(y))
+        ax.scatter(x, y, c=fuzzer['box_color'], alpha=0.8)
+
     if 'ylim' in misc_dict:
         ax.set_ylim(misc_dict['ylim'])
 
+    ax.grid(which='major', axis='both', linestyle='--')
+
     ax.set(title=misc_dict['plot_title'])
+
+    for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+                     ax.get_xticklabels() + ax.get_yticklabels()):
+        item.set_fontsize(15)
 
     fig.savefig(filename_pdf)
     fig.savefig(filename_png)
