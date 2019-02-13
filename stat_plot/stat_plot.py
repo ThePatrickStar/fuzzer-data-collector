@@ -75,6 +75,11 @@ def align_data(fuzzer_dict, misc_dict):
                 slots.append(slot)
                 vals.append(val)
 
+        # handle the case when the txt file is empty
+        if len(lines) == 0:
+            slots.append(0)
+            vals.append(0)
+
         slot_idx = 0
         new_vals = []
 
@@ -385,7 +390,8 @@ def generate_box_plots(fuzzers_dict, misc_dict):
     if 'ylim' in misc_dict:
         ax.set_ylim(misc_dict['ylim'])
 
-    ax.grid(which='major', axis='both', linestyle='--')
+    # ax.grid(which='major', axis='both', linestyle='--')
+    ax.grid(False)
 
     ax.set(title=misc_dict['plot_title'])
 
