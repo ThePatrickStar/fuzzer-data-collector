@@ -130,7 +130,7 @@ def detailed_plot(fuzzer_dict, misc_dict, n):
 
 
 # add plots to ax; write the computed data out
-def plot_files(fuzzer_dict, misc_dict, ax):
+def plot_files(fuzzer_dict, misc_dict, ax, ax_s):
     entire_data_rows = []
 
     data_files = fuzzer_dict['data_files']
@@ -177,16 +177,22 @@ def plot_files(fuzzer_dict, misc_dict, ax):
     bins = [int(x/step) for x in bins[0::step]]
 
     if set_line_color and set_line_style:
-        ax.plot(bins[0:], means[0::step], label=fuzzer_name, linestyle=fuzzer_dict['line_style'], color=fuzzer_dict['line_color'])
+        ax.plot(bins[0:], means[0::step], label=fuzzer_name, linestyle=fuzzer_dict['line_style']
+                , color=fuzzer_dict['line_color'])
+        ax_s.plot(bins[0:], means[0::step], label=fuzzer_name, linestyle=fuzzer_dict['line_style']
+                  , color=fuzzer_dict['line_color'])
         ax.fill_between(bins[0:], mins[0::step], maxs[0::step], facecolor=fuzzer_dict['line_color'], alpha=0.2)
     elif set_line_color:
         ax.plot(bins[0:], means[0::step], label=fuzzer_name, color=fuzzer_dict['line_color'])
+        ax_s.plot(bins[0:], means[0::step], label=fuzzer_name, color=fuzzer_dict['line_color'])
         ax.fill_between(bins[0:], mins[0::step], maxs[0::step], facecolor=fuzzer_dict['line_color'], alpha=0.2)
     elif set_line_style:
         ax.plot(bins[0:], means[0::step], label=fuzzer_name, linestyle=fuzzer_dict['line_style'])
+        ax_s.plot(bins[0:], means[0::step], label=fuzzer_name, linestyle=fuzzer_dict['line_style'])
         ax.fill_between(bins[0:], mins[0::step], maxs[0::step], alpha=0.2)
     else:
         ax.plot(bins[0:], means[0::step], label=fuzzer_name)
+        ax_s.plot(bins[0:], means[0::step], label=fuzzer_name)
         ax.fill_between(bins[0:], mins[0::step], maxs[0::step], alpha=0.2)
 
 
@@ -268,16 +274,22 @@ def generate_plots(fuzzers_dict, misc_dict):
     fig = plt.figure(len(fuzzers_dict))
     ax = fig.add_subplot(111)
 
+    # fig_s does not plot the confidence interval
+    fig_s = plt.figure(len(fuzzers_dict) + 1)
+    ax_s = fig_s.add_subplot(111)
+
     for (n, fuzzer_name) in enumerate(fuzzers_dict):
         fuzzer_dict = fuzzers_dict[fuzzer_name]
         align_data(fuzzer_dict, misc_dict)
         detailed_plot(fuzzer_dict, misc_dict, n)
-        plot_files(fuzzer_dict, misc_dict, ax)
+        plot_files(fuzzer_dict, misc_dict, ax, ax_s)
 
     out_dir = misc_dict['out_dir'] + '/'
     base_filename = out_dir + misc_dict["project"] + "_overall" + misc_dict["file_postfix"]
     filename_pdf = base_filename + '.pdf'
     filename_png = base_filename + '.png'
+    filename_pdf_s = base_filename + '_simple.pdf'
+    filename_png_s = base_filename + '_simple.png'
     general_stats_file = out_dir + misc_dict["project"] + "_overall_stats" + misc_dict["file_postfix"] + ".txt"
 
     student_t_test(general_stats_file, 'w', fuzzers_dict)
@@ -290,6 +302,11 @@ def generate_plots(fuzzers_dict, misc_dict):
     ax.legend()
     fig.savefig(filename_pdf)
     fig.savefig(filename_png)
+
+    ax_s.set(xlabel='time ({})'.format(display_bucket(misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
+    ax_s.legend()
+    fig_s.savefig(filename_pdf_s)
+    fig_s.savefig(filename_png_s)
 
 
 def generate_stat_data(fuzzers_dict, misc_dict):
