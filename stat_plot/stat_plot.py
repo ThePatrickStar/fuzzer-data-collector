@@ -299,14 +299,36 @@ def generate_plots(fuzzers_dict, misc_dict):
     calculate_a12s(general_stats_file, 'a', fuzzers_dict)
 
     ax.set(xlabel='time ({})'.format(display_bucket(misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
-    ax.legend()
-    fig.savefig(filename_pdf)
-    fig.savefig(filename_png)
+    ax.legend(fontsize=20)
+
+    for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+                     ax.get_xticklabels()):
+        item.set_fontsize(15)
+
+    for item in (ax.get_yticklabels()):
+        item.set_fontsize(15)
+
+    for tick in ax.get_xticklabels():
+        tick.set_rotation(45)
+
+    fig.savefig(filename_pdf, bbox_inches='tight', dpi=100)
+    fig.savefig(filename_png, bbox_inches='tight', dpi=100)
 
     ax_s.set(xlabel='time ({})'.format(display_bucket(misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
-    ax_s.legend()
-    fig_s.savefig(filename_pdf_s)
-    fig_s.savefig(filename_png_s)
+    ax_s.legend(fontsize=20)
+
+    for item in ([ax_s.title, ax_s.xaxis.label, ax_s.yaxis.label] +
+                     ax_s.get_xticklabels()):
+        item.set_fontsize(15)
+
+    for tick in ax_s.get_xticklabels():
+        tick.set_rotation(45)
+
+    for item in (ax_s.get_yticklabels()):
+        item.set_fontsize(15)
+
+    fig_s.savefig(filename_pdf_s, bbox_inches='tight', dpi=100)
+    fig_s.savefig(filename_png_s, bbox_inches='tight', dpi=100)
 
 
 def generate_stat_data(fuzzers_dict, misc_dict):
