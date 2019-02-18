@@ -25,6 +25,8 @@ def main():
         generate_stat_data(fuzzers_dict, misc_dict)
     elif misc_dict['stat_type'] == 'boxplot':
         generate_box_plots(fuzzers_dict, misc_dict)
+    elif misc_dict['stat_type'] == 'scatterplot':
+        generate_scatter_plots(fuzzers_dict, misc_dict)
 
 
 if __name__ == "__main__":

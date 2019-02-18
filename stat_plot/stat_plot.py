@@ -446,3 +446,68 @@ def generate_box_plots(fuzzers_dict, misc_dict):
 
     fig.savefig(filename_pdf)
     fig.savefig(filename_png)
+
+
+def generate_scatter_plots(fuzzers_dict, misc_dict):
+    fig = plt.figure(len(fuzzers_dict))
+    ax = fig.add_subplot(111)
+
+    fuzzer_names = list(fuzzers_dict.keys())
+    fuzzer_names.sort()
+    for fuzzer_name in fuzzer_names:
+        fuzzer = fuzzers_dict[fuzzer_name]
+
+        # use only the first data file
+        data_file = fuzzer['data_files'][0]
+        with open(data_file) as df:
+            lines = df.readlines()
+            xs = []
+            ys = []
+            for line in lines:
+                tokens = line.split(':')
+                # skip invalid line
+                if len(tokens) != 2:
+                    continue
+                xs.append(int(tokens[0]))
+                ys.append(int(tokens[1]))
+
+            fuzzer['final_xs'] = xs
+            fuzzer['final_ys'] = ys
+
+            set_line_color = 'line_color' in fuzzer
+
+            if set_line_color:
+                ax.scatter(xs, ys, c=fuzzer['line_color'], alpha=0.2, s=20, label=fuzzer_name)
+            else:
+                ax.scatter(xs, ys, alpha=0.2, s=20, label=fuzzer_name)
+
+    # ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set(title=misc_dict['plot_title'])
+    ax.set(xlabel=misc_dict['xlabel'], ylabel=misc_dict['ylabel'])
+
+    large_font = misc_dict['large_font']
+
+    if large_font:
+        ax.legend(fontsize=15)
+    else:
+        ax.legend()
+
+    if large_font:
+        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels()):
+            item.set_fontsize(15)
+
+        for tick in ax.get_xticklabels():
+            tick.set_rotation(45)
+
+        for item in (ax.get_yticklabels()):
+            item.set_fontsize(15)
+
+    out_dir = misc_dict['out_dir'] + '/'
+    mkdirs(out_dir)
+    base_filename = out_dir + misc_dict["project"] + misc_dict["file_postfix"]
+    filename_pdf = base_filename + '.pdf'
+    filename_png = base_filename + '.png'
+
+    fig.savefig(filename_pdf, bbox_inches='tight', dpi=100)
+    fig.savefig(filename_png, bbox_inches='tight', dpi=100)

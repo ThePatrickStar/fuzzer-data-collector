@@ -1,4 +1,5 @@
 test/out/
 test/data/
 test/out_boxplot/
+test/out_scatter/
 exp/

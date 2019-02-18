@@ -1,0 +1,41 @@
+[fuzzers]
+    # sub-tables use "." to connect
+    [fuzzers.memfuzz]
+        # the content in data files are "time(sec):data number"
+        data_files = [
+            "test/data_scatter/test_mem.txt"
+        ]
+        line_color = "xkcd:scarlet"
+
+    [fuzzers.afl]
+        # the content in data files are "time(sec):data number"
+        data_files = [
+            "test/data_scatter/test_afl.txt"
+        ]
+        line_color = "xkcd:slate blue"
+
+    [fuzzers.aflfast]
+        # the content in data files are "time(sec):data number"
+        data_files = [
+            "test/data_scatter/test_aflfast.txt"
+        ]
+        line_style = "dashdot"
+        line_color = "xkcd:olive yellow"
+
+    [fuzzers.perffuzz]
+        # the content in data files are "time(sec):data number"
+        data_files = [
+            "test/data_scatter/test_perffuzz.txt"
+        ]
+        line_style = "dashdot"
+        line_color = "xkcd:seafoam"
+
+[misc]
+    out_dir = "test/out_scatter"
+    ylabel = "# of seed in queue"
+    xlabel = "stack length"
+    file_postfix = "-scatter"
+    plot_title = "nasm-16m stack length distribution"
+    project = "nasm-16m"
+    stat_type = "scatterplot"
+    large_font = true
