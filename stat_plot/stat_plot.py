@@ -68,6 +68,9 @@ def align_data(fuzzer_dict, misc_dict):
 
             for line in lines:
                 tokens = line.split(":")
+                # skip illegal line
+                if len(tokens) != 2:
+                    continue
                 slot = int(tokens[0])
                 val = int(tokens[1])
                 if slot > max_slot:
@@ -76,7 +79,7 @@ def align_data(fuzzer_dict, misc_dict):
                 vals.append(val)
 
         # handle the case when the txt file is empty
-        if len(lines) == 0:
+        if len(slots) == 0:
             slots.append(0)
             vals.append(0)
 
