@@ -523,6 +523,8 @@ def draw_histograms(histtype, figure_no, xss, colors, fuzzer_names, misc_dict):
     ax.set_yscale('log')
     ax.set(title=misc_dict['plot_title'])
     ax.set(xlabel=misc_dict['xlabel'], ylabel=misc_dict['ylabel'])
+    # scientific notation for x axis labels
+    # ax.ticklabel_format(style='sci', axis='x', scilimits=(1, 4))
 
     large_font = misc_dict['large_font']
 
