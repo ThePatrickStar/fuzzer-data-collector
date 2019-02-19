@@ -16,13 +16,13 @@
         data_files = [
             "test/data_histo/test_aflfast.txt"
         ]
-        line_color = "xkcd:olive yellow"
+        line_color = "xkcd:marigold"
 
     [fuzzers.perffuzz]
         data_files = [
             "test/data_histo/test_perffuzz.txt"
         ]
-        line_color = "xkcd:seafoam"
+        line_color = "xkcd:jade green"
 
 [misc]
     out_dir = "test/out_histogram"
