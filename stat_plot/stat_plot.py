@@ -511,3 +511,76 @@ def generate_scatter_plots(fuzzers_dict, misc_dict):
 
     fig.savefig(filename_pdf, bbox_inches='tight', dpi=100)
     fig.savefig(filename_png, bbox_inches='tight', dpi=100)
+
+
+def draw_histograms(histtype, figure_no, xss, colors, fuzzer_names, misc_dict):
+    fig = plt.figure(figure_no)
+    ax = fig.add_subplot(111)
+    n_bins = misc_dict['n_bins']
+    ax.hist(x=xss, bins=n_bins, histtype=histtype, color=colors, label=fuzzer_names)
+
+    # ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set(title=misc_dict['plot_title'])
+    ax.set(xlabel=misc_dict['xlabel'], ylabel=misc_dict['ylabel'])
+
+    large_font = misc_dict['large_font']
+
+    if large_font:
+        ax.legend(fontsize=15)
+    else:
+        ax.legend()
+
+    if large_font:
+        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels()):
+            item.set_fontsize(15)
+
+        for tick in ax.get_xticklabels():
+            tick.set_rotation(45)
+
+        for item in (ax.get_yticklabels()):
+            item.set_fontsize(15)
+
+    out_dir = misc_dict['out_dir'] + '/'
+    mkdirs(out_dir)
+    base_filename = out_dir + misc_dict["project"] + misc_dict["file_postfix"] + '-' + histtype
+    filename_pdf = base_filename + '.pdf'
+    filename_png = base_filename + '.png'
+
+    fig.savefig(filename_pdf, bbox_inches='tight', dpi=100)
+    fig.savefig(filename_png, bbox_inches='tight', dpi=100)
+
+
+def generate_histograms(fuzzers_dict, misc_dict):
+
+    fuzzer_names = list(fuzzers_dict.keys())
+    fuzzer_names.sort()
+    xss = []
+    colors = []
+    for fuzzer_name in fuzzer_names:
+        fuzzer = fuzzers_dict[fuzzer_name]
+
+        # use only the first data file
+        data_file = fuzzer['data_files'][0]
+        with open(data_file) as df:
+            lines = df.readlines()
+            xs = []
+            for line in lines:
+                if len(line.strip()) > 0:
+                    xs.append(int(line))
+
+            fuzzer['final_xs'] = xs
+            xss.append(xs)
+
+        set_line_color = 'line_color' in fuzzer
+
+        if set_line_color:
+            colors.append(fuzzer['line_color'])
+        else:
+            colors.append('xkcd:slate grey')
+
+    draw_histograms('bar', 1, xss, colors, fuzzer_names, misc_dict)
+    draw_histograms('barstacked', 2, xss, colors, fuzzer_names, misc_dict)
+    draw_histograms('step', 3, xss, colors, fuzzer_names, misc_dict)
+    draw_histograms('stepfilled', 4, xss, colors, fuzzer_names, misc_dict)
+

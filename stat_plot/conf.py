@@ -40,7 +40,7 @@ def parse_config(config_path):
             print("[!] [misc] table misses 'stat_type'!")
             config_valid = False
 
-        valid_stat_types = ['overall', 'stest', 'boxplot', 'scatterplot']
+        valid_stat_types = ['overall', 'stest', 'boxplot', 'scatterplot', 'histogram']
         if misc_dict['stat_type'] not in valid_stat_types:
             print("[!] invalid stat_type: {}".format(misc_dict['stat_type']))
             config_valid = False
@@ -91,6 +91,16 @@ def parse_config(config_path):
         elif misc_dict['stat_type'] == 'scatterplot':
 
             required_keys = ["out_dir", "project", "file_postfix", 'plot_title', 'xlabel', 'ylabel', 'large_font']
+
+            for r_key in required_keys:
+                if r_key not in misc_dict:
+                    print("[!] {} (required) is missing is [misc]!".format(r_key))
+                    config_valid = False
+
+        elif misc_dict['stat_type'] == 'histogram':
+
+            required_keys = ["out_dir", "project", "file_postfix", 'plot_title', 'xlabel', 'ylabel',
+                             'large_font', 'n_bins']
 
             for r_key in required_keys:
                 if r_key not in misc_dict:

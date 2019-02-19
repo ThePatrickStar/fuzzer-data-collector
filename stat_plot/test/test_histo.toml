@@ -1,39 +1,36 @@
 [fuzzers]
     # sub-tables use "." to connect
     [fuzzers.memfuzz]
-        # the content in data files are "mem_val:count"
         data_files = [
-            "test/data_scatter/test_mem.txt"
+            "test/data_histo/test_mem.txt"
         ]
         line_color = "xkcd:scarlet"
 
     [fuzzers.afl]
-        # the content in data files are "mem_val:count"
         data_files = [
-            "test/data_scatter/test_afl.txt"
+            "test/data_histo/test_afl.txt"
         ]
         line_color = "xkcd:slate blue"
 
     [fuzzers.aflfast]
-        # the content in data files are "mem_val:count"
         data_files = [
-            "test/data_scatter/test_aflfast.txt"
+            "test/data_histo/test_aflfast.txt"
         ]
         line_color = "xkcd:olive yellow"
 
     [fuzzers.perffuzz]
-        # the content in data files are "mem_val:count"
         data_files = [
-            "test/data_scatter/test_perffuzz.txt"
+            "test/data_histo/test_perffuzz.txt"
         ]
         line_color = "xkcd:seafoam"
 
 [misc]
-    out_dir = "test/out_scatter"
+    out_dir = "test/out_histogram"
     ylabel = "# of seed in queue"
     xlabel = "stack length"
-    file_postfix = "-scatter"
+    file_postfix = "-histo"
     plot_title = "nasm-16m stack length distribution"
     project = "nasm-16m"
-    stat_type = "scatterplot"
+    stat_type = "histogram"
+    n_bins = 10
     large_font = true
