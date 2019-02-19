@@ -477,9 +477,9 @@ def generate_scatter_plots(fuzzers_dict, misc_dict):
             set_line_color = 'line_color' in fuzzer
 
             if set_line_color:
-                ax.scatter(xs, ys, c=fuzzer['line_color'], alpha=0.2, s=20, label=fuzzer_name)
+                ax.scatter(xs, ys, c=fuzzer['line_color'], alpha=1, s=20, label=fuzzer_name)
             else:
-                ax.scatter(xs, ys, alpha=0.2, s=20, label=fuzzer_name)
+                ax.scatter(xs, ys, alpha=1, s=20, label=fuzzer_name)
 
     # ax.set_xscale('log')
     ax.set_yscale('log')

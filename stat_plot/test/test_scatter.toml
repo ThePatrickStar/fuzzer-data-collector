@@ -19,14 +19,14 @@
         data_files = [
             "test/data_scatter/test_aflfast.txt"
         ]
-        line_color = "xkcd:olive yellow"
+        line_color = "xkcd:marigold"
 
     [fuzzers.perffuzz]
         # the content in data files are "mem_val:count"
         data_files = [
             "test/data_scatter/test_perffuzz.txt"
         ]
-        line_color = "xkcd:seafoam"
+        line_color = "xkcd:jade green"
 
 [misc]
     out_dir = "test/out_scatter"
