@@ -1481,9 +1481,13 @@ int main(int argc, char** argv) {
         if (current_no >= skip_no) {
             SAYF("current fname is %s, queue_cur mtime is: %lld, sec_slot is: %lld\n",\
              queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot);
-            u64 slot = queue_cur->sec_slot;
+        }
+        else {
+            SAYF("skipping %s, queue_cur mtime is: %lld, sec_slot is: %lld\n",\
+             queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot);
         }
 
+        u64 slot = queue_cur->sec_slot;
         if (!entries_only && current_no >= skip_no) {
             // create hard link of current item to the out_file
             link_or_copy(queue_cur->fname, out_file);
