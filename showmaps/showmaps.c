@@ -1478,11 +1478,13 @@ int main(int argc, char** argv) {
 
         //    SAYF("current fname is %s, queue_cur mtime is: %lld, sec_slot is: %lld, min_slot is: %lld, hour_slot is: %lld\n",\
         //     queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot, queue_cur->min_slot, queue_cur->hour_slot);
-        SAYF("current fname is %s, queue_cur mtime is: %lld, sec_slot is: %lld\n",\
-         queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot);
-        u64 slot = queue_cur->sec_slot;
+        if (current_no >= skip_no) {
+            SAYF("current fname is %s, queue_cur mtime is: %lld, sec_slot is: %lld\n",\
+             queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot);
+            u64 slot = queue_cur->sec_slot;
+        }
 
-        if (!entries_only) {
+        if (!entries_only && current_no >= skip_no) {
             // create hard link of current item to the out_file
             link_or_copy(queue_cur->fname, out_file);
 
@@ -1518,13 +1520,13 @@ int main(int argc, char** argv) {
 
             u32 bitmap_size = count_non_255_bytes(virgin_bits);
             // SAYF("bitmap_size is %d\n", bitmap_size);
-            if (current_no > skip_no)
+            if (current_no >= skip_no)
                 add_slot_val(&slot_edge, &slot_edge_top, slot, bitmap_size);
 
         }
 
         entries_no++;
-        if (current_no > skip_no)
+        if (current_no >= skip_no)
             add_slot_val(&slot_entry, &slot_entry_top, slot, entries_no);
 
         // move to the next item in queue
