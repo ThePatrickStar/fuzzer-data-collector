@@ -107,7 +107,7 @@ static u32 queued_paths,              /* Total number of queued testcases  */
            skip_no = 0,               /* no of files to skip for time count*/
            exec_tmout;                /* Exec timeout (ms)                 */
 
-static u64 min_mtime,                 /* Min mtime of all initial seeds    */
+static u64 min_mtime = 0,                 /* Min mtime of all initial seeds    */
            max_mtime,                 /* Max mtime of all initial seeds    */
            mem_limit = MEM_LIMIT;     /* Memory limit (MB)                 */
 
@@ -994,7 +994,7 @@ static void usage(u8* argv0) {
        "Required parameters:\n\n"
 
        "  -i dir        - input directory with test cases\n"
-       "  -o file       - output directory\n\n"
+       "  -o dir        - output directory\n\n"
 
        "Execution control settings:\n\n"
 
@@ -1005,6 +1005,7 @@ static void usage(u8* argv0) {
 
        "Other settings:\n\n"
 
+       "  -T sec        - the timestamp to be used as min_mtime (optional)\n"
        "  -q            - sink program's output and don't show messages\n"
        "  -e            - show edge coverage only, ignore hit counts\n"
        "  -E            - count for N.O. of entries only, ignore coverage\n"
@@ -1133,7 +1134,7 @@ static void add_to_queue(u8* fname, u32 len, u64 mtime) {
 
     if (queued_paths == skip_no) {
       max_mtime = mtime;
-      min_mtime = mtime;
+      if (!min_mtime) min_mtime = mtime;
     }
 
     if (mtime >= max_mtime) max_mtime = mtime;
@@ -1304,7 +1305,7 @@ int main(int argc, char** argv) {
   u32 tcnt;
   char** use_argv;
 
-  while ((opt = getopt(argc,argv,"+i:o:f:m:t:S:Eeqbcs")) > 0)
+  while ((opt = getopt(argc,argv,"+i:o:f:m:t:S:T:Eeqbcs")) > 0)
 
     switch (opt) {
 
@@ -1423,6 +1424,12 @@ int main(int argc, char** argv) {
 
         if (entries_only) FATAL("Multiple -E options not supported");
         entries_only = 1;
+        break;
+
+      case 'T': /* manually feed the timestamp */
+
+        if (min_mtime) FATAL("Multiple -Q options not supported");
+        min_mtime = atoll(optarg);
         break;
 
       default:
