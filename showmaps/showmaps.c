@@ -1490,12 +1490,12 @@ int main(int argc, char** argv) {
              queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot);
         }
         else {
-            SAYF("skipping %s, queue_cur mtime is: %lld, sec_slot is: %lld\n",\
+            SAYF("skipping but still executing %s, queue_cur mtime is: %lld, sec_slot is: %lld\n",\
              queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot);
         }
 
         u64 slot = queue_cur->sec_slot;
-        if (!entries_only && current_no >= skip_no) {
+        if (!entries_only) {
             // create hard link of current item to the out_file
             link_or_copy(queue_cur->fname, out_file);
 
@@ -1505,7 +1505,7 @@ int main(int argc, char** argv) {
             // delete the out_file
             unlink(out_file);
 
-            if (!skip_individual) {
+            if (!skip_individual && current_no >= skip_no) {
 
                 // setup the path for the new trace file
                 pure_fname = strrchr(queue_cur->fname, '/');
