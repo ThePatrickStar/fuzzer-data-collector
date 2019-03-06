@@ -63,6 +63,7 @@ def align_data(fuzzer_dict, misc_dict):
     for (j, data_file) in enumerate(data_files):
         slots = []
         vals = []
+        first = True
         with open(data_file) as df:
             lines = df.readlines()
 
@@ -73,6 +74,13 @@ def align_data(fuzzer_dict, misc_dict):
                     continue
                 slot = int(tokens[0])
                 val = int(tokens[1])
+
+                if first:
+                    if slot != 0:
+                        slots.append(0)
+                        vals.append(0)
+                    first = False
+
                 if slot > max_slot:
                     break
                 slots.append(slot)
@@ -82,14 +90,16 @@ def align_data(fuzzer_dict, misc_dict):
         if len(slots) == 0:
             slots.append(0)
             vals.append(0)
+            slots.append(1)
+            vals.append(0)
 
-        slot_idx = 0
+        slot_idx = 1
         new_vals = []
 
         for i in range(0, max_slot):
             if i > slots[slot_idx]:
                 slot_idx = min(len(slots)-1, slot_idx + 1)
-            new_vals.append(vals[slot_idx])
+            new_vals.append(vals[slot_idx-1])
 
         new_data_file = aligned_dir + str(j) + ".txt"
         with open(new_data_file, "w") as out_file:
