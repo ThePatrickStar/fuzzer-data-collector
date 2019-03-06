@@ -704,8 +704,8 @@ static u32 write_slot_val_file(u8* filename, struct slot_val * list) {
     if (!f) PFATAL("fdopen() failed");
 
     while (list != NULL) {
-        SAYF("slot is %d, value is %lld\n", list->slot, list->val);
-        fprintf(f, "%10u:%u\n", list->slot, list->val);
+        SAYF("slot is %lld, value is %d\n", list->slot, list->val);
+        fprintf(f, "%10lld:%d\n", list->slot, list->val);
         list = list->next;
     }
 
