@@ -119,6 +119,7 @@ static s32 out_fd,                    /* Persistent fd for out_file        */
 
 static u8  quiet_mode,                /* Hide non-essential messages?      */
            edges_only,                /* Ignore hit counts?                */
+           given_min_mtime = 0,       /* User provides min_mtime          */
            use_stdin = 1,             /* Target program read from stdin?   */
            entries_only,              /* Only count for N.O. of items?     */
            binary_mode,               /* Write output as a binary map      */
@@ -1134,11 +1135,11 @@ static void add_to_queue(u8* fname, u32 len, u64 mtime) {
 
     if (queued_paths == skip_no) {
       max_mtime = mtime;
-      if (!min_mtime) min_mtime = mtime;
+      if (!given_min_mtime) min_mtime = mtime;
     }
 
     if (mtime >= max_mtime) max_mtime = mtime;
-    if (mtime <= min_mtime) min_mtime = mtime;
+    if (mtime <= min_mtime && !given_min_mtime) min_mtime = mtime;
 
   }
 
@@ -1430,6 +1431,7 @@ int main(int argc, char** argv) {
 
         if (min_mtime) FATAL("Multiple -Q options not supported");
         min_mtime = atoll(optarg);
+        given_min_mtime = 1;
         break;
 
       default:
@@ -1485,7 +1487,8 @@ int main(int argc, char** argv) {
 
         //    SAYF("current fname is %s, queue_cur mtime is: %lld, sec_slot is: %lld, min_slot is: %lld, hour_slot is: %lld\n",\
         //     queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot, queue_cur->min_slot, queue_cur->hour_slot);
-        if (current_no >= skip_no) {
+        u64 slot = queue_cur->sec_slot;
+        if (current_no >= skip_no && (int) slot >= 0) {
             SAYF("current fname is %s, queue_cur mtime is: %lld, sec_slot is: %lld\n",\
              queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot);
         }
@@ -1494,7 +1497,6 @@ int main(int argc, char** argv) {
              queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot);
         }
 
-        u64 slot = queue_cur->sec_slot;
         if (!entries_only) {
             // create hard link of current item to the out_file
             link_or_copy(queue_cur->fname, out_file);
@@ -1531,13 +1533,13 @@ int main(int argc, char** argv) {
 
             u32 bitmap_size = count_non_255_bytes(virgin_bits);
             // SAYF("bitmap_size is %d\n", bitmap_size);
-            if (current_no >= skip_no)
+            if (current_no >= skip_no && (int) slot >= 0)
                 add_slot_val(&slot_edge, &slot_edge_top, slot, bitmap_size);
 
         }
 
         entries_no++;
-        if (current_no >= skip_no)
+        if (current_no >= skip_no && (int) slot >= 0)
             add_slot_val(&slot_entry, &slot_entry_top, slot, entries_no);
 
         // move to the next item in queue
