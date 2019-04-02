@@ -117,13 +117,14 @@ static s32 out_fd,       /* Persistent fd for out_file        */
     shm_id,              /* ID of the SHM region              */
     out_dir_fd = -1;     /* FD of the lock file               */
 
-static u8 quiet_mode, /* Hide non-essential messages?      */
-    edges_only,       /* Ignore hit counts?                */
-    use_stdin = 1,    /* Target program read from stdin?   */
-    entries_only,     /* Only count for N.O. of items?     */
-    binary_mode,      /* Write output as a binary map      */
-    skip_individual,  /* Skip individual trace generation  */
-    keep_cores;       /* Allow coredumps?                  */
+static u8 quiet_mode,    /* Hide non-essential messages?      */
+    edges_only,          /* Ignore hit counts?                */
+    given_min_mtime = 0, /* User provides min_mtime          */
+    use_stdin = 1,       /* Target program read from stdin?   */
+    entries_only,        /* Only count for N.O. of items?     */
+    binary_mode,         /* Write output as a binary map      */
+    skip_individual,     /* Skip individual trace generation  */
+    keep_cores;          /* Allow coredumps?                  */
 
 static volatile u8 stop_soon, /* Ctrl-C pressed?                   */
     child_timed_out,          /* Child timed out?                  */
@@ -503,7 +504,7 @@ static inline u8 has_new_bits(u8 *virgin_map) {
         u8 *vir = (u8 *)virgin;
 
 /* Looks like we have not found any new bytes yet; see if any non-zero
-   bytes in current[] are pristine in virgin[]. */
+bytes in current[] are pristine in virgin[]. */
 
 #ifdef __x86_64__
 
@@ -1073,13 +1074,13 @@ static void add_to_queue(u8 *fname, u32 len, u64 mtime) {
 
     if (queued_paths == skip_no) {
       max_mtime = mtime;
-      if (!min_mtime)
+      if (!given_min_mtime)
         min_mtime = mtime;
     }
 
     if (mtime >= max_mtime)
       max_mtime = mtime;
-    if (mtime <= min_mtime)
+    if (mtime <= min_mtime && !given_min_mtime)
       min_mtime = mtime;
   }
 
@@ -1149,7 +1150,7 @@ static void read_testcases(void) {
     if (errno == ENOENT || errno == ENOTDIR)
 
       SAYF("\n" cLRD "[-] " cRST "The input directory does not seem to be "
-                                 "valid - try again. The fuzzer needs\n"
+           "valid - try again. The fuzzer needs\n"
            "    one or more test case to start with - ideally, a small file "
            "under 1 kB\n"
            "    or so. The cases must be stored as regular files directly in "
@@ -1194,7 +1195,7 @@ static void read_testcases(void) {
   if (!queued_paths) {
 
     SAYF("\n" cLRD "[-] " cRST "Looks like there are no valid test cases in "
-                               "the input directory! The fuzzer\n"
+         "the input directory! The fuzzer\n"
          "    needs one or more test case to start with - ideally, a small "
          "file under\n"
          "    1 kB or so. The cases must be stored as regular files directly "
@@ -1383,11 +1384,11 @@ int main(int argc, char **argv) {
       entries_only = 1;
       break;
 
-    case 'T': /* manually feed the timestamp */
-
+    case 'T':
       if (min_mtime)
-        FATAL("Multiple -Q options not supported");
+        FATAL("Multiple -T options not supported");
       min_mtime = atoll(optarg);
+      given_min_mtime = 1;
       break;
 
     default:
@@ -1443,10 +1444,10 @@ int main(int argc, char **argv) {
   while (queue_cur != NULL) {
 
     queue_cur->has_new_cov = 0;
-
     //    SAYF("current fname is %s, queue_cur mtime is: %lld, sec_slot is: %lld, min_slot is: %lld, hour_slot is: %lld\n",\
         //     queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot, queue_cur->min_slot, queue_cur->hour_slot);
-    if (current_no >= skip_no) {
+    u64 slot = queue_cur->sec_slot;
+    if (current_no >= skip_no && (int)slot >= 0) {
       SAYF("current fname is %s, queue_cur mtime is: %lld, sec_slot is: %lld\n",
            queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot);
     } else {
@@ -1455,7 +1456,6 @@ int main(int argc, char **argv) {
            queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot);
     }
 
-    u64 slot = queue_cur->sec_slot;
     if (!entries_only) {
       // create hard link of current item to the out_file
       link_or_copy(queue_cur->fname, out_file);
