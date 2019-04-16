@@ -46,7 +46,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-struct queue_entry {
+struct queue_entry
+{
 
   u8 *fname; /* File name for the test case      */
   u32 len;   /* Input length                     */
@@ -81,7 +82,8 @@ static struct queue_entry *queue, /* Fuzzing queue (linked list)      */
 
 // pair of time slot and value
 
-struct slot_val {
+struct slot_val
+{
   u64 slot;
   u32 val;
   struct slot_val *next;
@@ -137,22 +139,20 @@ u8 virgin_bits[MAP_SIZE]; /* Regions yet untouched by fuzzing  */
 
 static const u8 count_class_human[256] = {
 
-        [0] = 0,          [1] = 1,        [2] = 2,         [3] = 3,
-        [4 ... 7] = 4,    [8 ... 15] = 5, [16 ... 31] = 6, [32 ... 127] = 7,
-        [128 ... 255] = 8
+    [0] = 0, [1] = 1, [2] = 2, [3] = 3, [4 ... 7] = 4, [8 ... 15] = 5, [16 ... 31] = 6, [32 ... 127] = 7, [128 ... 255] = 8
 
 };
 
 static const u8 count_class_binary[256] = {
 
-        [0] = 0, [1] = 1, [2] = 2, [3] = 4, [4 ... 7] = 8, [8 ... 15] = 16,
-        [16 ... 31] = 32, [32 ... 127] = 64, [128 ... 255] = 128
+    [0] = 0, [1] = 1, [2] = 2, [3] = 4, [4 ... 7] = 8, [8 ... 15] = 16, [16 ... 31] = 32, [32 ... 127] = 64, [128 ... 255] = 128
 
 };
 
 static u16 count_class_lookup16[65536];
 
-void init_count_class16(void) {
+void init_count_class16(void)
+{
 
   u32 b1, b2;
 
@@ -162,19 +162,22 @@ void init_count_class16(void) {
           (count_class_binary[b1] << 8) | count_class_binary[b2];
 }
 
-static u8 *DI(u64 val) {
+static u8 *DI(u64 val)
+{
 
   static u8 tmp[12][16];
   static u8 cur;
 
   cur = (cur + 1) % 12;
 
-#define CHK_FORMAT(_divisor, _limit_mult, _fmt, _cast)                         \
-  do {                                                                         \
-    if (val < (_divisor) * (_limit_mult)) {                                    \
-      sprintf(tmp[cur], _fmt, ((_cast)val) / (_divisor));                      \
-      return tmp[cur];                                                         \
-    }                                                                          \
+#define CHK_FORMAT(_divisor, _limit_mult, _fmt, _cast)    \
+  do                                                      \
+  {                                                       \
+    if (val < (_divisor) * (_limit_mult))                 \
+    {                                                     \
+      sprintf(tmp[cur], _fmt, ((_cast)val) / (_divisor)); \
+      return tmp[cur];                                    \
+    }                                                     \
   } while (0)
 
   /* 0-9999 */
@@ -218,16 +221,19 @@ static u8 *DI(u64 val) {
 /* Describe float. Similar to the above, except with a single
    static buffer. */
 
-static u8 *DF(double val) {
+static u8 *DF(double val)
+{
 
   static u8 tmp[16];
 
-  if (val < 99.995) {
+  if (val < 99.995)
+  {
     sprintf(tmp, "%0.02f", val);
     return tmp;
   }
 
-  if (val < 999.95) {
+  if (val < 999.95)
+  {
     sprintf(tmp, "%0.01f", val);
     return tmp;
   }
@@ -237,7 +243,8 @@ static u8 *DF(double val) {
 
 /* Describe integer as memory size. */
 
-static u8 *DMS(u64 val) {
+static u8 *DMS(u64 val)
+{
 
   static u8 tmp[12][16];
   static u8 cur;
@@ -284,20 +291,26 @@ static u8 *DMS(u64 val) {
   return tmp[cur];
 }
 
-static void classify_counts(u8 *mem, const u8 *map) {
+static void classify_counts(u8 *mem, const u8 *map)
+{
 
   u32 i = MAP_SIZE;
 
-  if (edges_only) {
+  if (edges_only)
+  {
 
-    while (i--) {
+    while (i--)
+    {
       if (*mem)
         *mem = 1;
       mem++;
     }
-  } else {
+  }
+  else
+  {
 
-    while (i--) {
+    while (i--)
+    {
       *mem = map[*mem];
       mem++;
     }
@@ -308,15 +321,18 @@ static void classify_counts(u8 *mem, const u8 *map) {
 
 #ifdef __x86_64__
 
-static inline void classify_trace_counts(u64 *mem) {
+static inline void classify_trace_counts(u64 *mem)
+{
 
   u32 i = MAP_SIZE >> 3;
 
-  while (i--) {
+  while (i--)
+  {
 
     /* Optimize for sparse bitmaps. */
 
-    if (unlikely(*mem)) {
+    if (unlikely(*mem))
+    {
 
       u16 *mem16 = (u16 *)mem;
 
@@ -332,15 +348,18 @@ static inline void classify_trace_counts(u64 *mem) {
 
 #else
 
-static inline void classify_trace_counts(u32 *mem) {
+static inline void classify_trace_counts(u32 *mem)
+{
 
   u32 i = MAP_SIZE >> 2;
 
-  while (i--) {
+  while (i--)
+  {
 
     /* Optimize for sparse bitmaps. */
 
-    if (unlikely(*mem)) {
+    if (unlikely(*mem))
+    {
 
       u16 *mem16 = (u16 *)mem;
 
@@ -356,7 +375,8 @@ static inline void classify_trace_counts(u32 *mem) {
 
 // Linkedlist related
 
-void swap(struct queue_entry *a, struct queue_entry *b) {
+void swap(struct queue_entry *a, struct queue_entry *b)
+{
   u8 *tmp_fname;
   u32 tmp_len;
   u64 tmp_mtime;
@@ -374,13 +394,15 @@ void swap(struct queue_entry *a, struct queue_entry *b) {
   b->mtime = tmp_mtime;
 }
 
-struct queue_entry *last_node(struct queue_entry *root) {
+struct queue_entry *last_node(struct queue_entry *root)
+{
   while (root && root->next)
     root = root->next;
   return root;
 }
 
-struct queue_entry *partition(struct queue_entry *l, struct queue_entry *h) {
+struct queue_entry *partition(struct queue_entry *l, struct queue_entry *h)
+{
   // set the pivot point as h value
   u64 x = h->mtime;
 
@@ -388,8 +410,10 @@ struct queue_entry *partition(struct queue_entry *l, struct queue_entry *h) {
 
   struct queue_entry *j = l;
 
-  for (; j != h; j = j->next) {
-    if (j->mtime <= x) {
+  for (; j != h; j = j->next)
+  {
+    if (j->mtime <= x)
+    {
       i = (i == NULL) ? l : i->next;
       swap(i, j);
     }
@@ -399,28 +423,33 @@ struct queue_entry *partition(struct queue_entry *l, struct queue_entry *h) {
   return i;
 }
 
-void _quick_sort(struct queue_entry *l, struct queue_entry *h) {
-  if (h != NULL && l != h && l != h->next) {
+void _quick_sort(struct queue_entry *l, struct queue_entry *h)
+{
+  if (h != NULL && l != h && l != h->next)
+  {
     struct queue_entry *p = partition(l, h);
     _quick_sort(l, p->prev);
     _quick_sort(p->next, h);
   }
 }
 
-void quick_sort(struct queue_entry *head) {
+void quick_sort(struct queue_entry *head)
+{
   struct queue_entry *h = last_node(head);
   _quick_sort(head, h);
 }
 
 #define FF(_b) (0xff << ((_b) << 3))
 
-static u32 count_bytes(u8 *mem) {
+static u32 count_bytes(u8 *mem)
+{
 
   u32 *ptr = (u32 *)mem;
   u32 i = (MAP_SIZE >> 2);
   u32 ret = 0;
 
-  while (i--) {
+  while (i--)
+  {
 
     u32 v = *(ptr++);
 
@@ -442,13 +471,15 @@ static u32 count_bytes(u8 *mem) {
 /* Count the number of non-255 bytes set in the bitmap. Used strictly for the
    status screen, several calls per second or so. */
 
-static u32 count_non_255_bytes(u8 *mem) {
+static u32 count_non_255_bytes(u8 *mem)
+{
 
   u32 *ptr = (u32 *)mem;
   u32 i = (MAP_SIZE >> 2);
   u32 ret = 0;
 
-  while (i--) {
+  while (i--)
+  {
 
     u32 v = *(ptr++);
 
@@ -470,7 +501,8 @@ static u32 count_non_255_bytes(u8 *mem) {
   return ret;
 }
 
-static inline u8 has_new_bits(u8 *virgin_map) {
+static inline u8 has_new_bits(u8 *virgin_map)
+{
 
 #ifdef __x86_64__
 
@@ -490,20 +522,23 @@ static inline u8 has_new_bits(u8 *virgin_map) {
 
   u8 ret = 0;
 
-  while (i--) {
+  while (i--)
+  {
 
     /* Optimize for (*current & *virgin) == 0 - i.e., no bits in current bitmap
        that have not been already cleared from the virgin map - since this will
        almost always be the case. */
 
-    if (unlikely(*current) && unlikely(*current & *virgin)) {
+    if (unlikely(*current) && unlikely(*current & *virgin))
+    {
 
-      if (likely(ret < 2)) {
+      if (likely(ret < 2))
+      {
 
         u8 *cur = (u8 *)current;
         u8 *vir = (u8 *)virgin;
 
-/* Looks like we have not found any new bytes yet; see if any non-zero
+        /* Looks like we have not found any new bytes yet; see if any non-zero
 bytes in current[] are pristine in virgin[]. */
 
 #ifdef __x86_64__
@@ -543,7 +578,8 @@ static void remove_shm(void) { shmctl(shm_id, IPC_RMID, NULL); }
 
 /* Configure shared memory. */
 
-static void setup_shm(void) {
+static void setup_shm(void)
+{
 
   u8 *shm_str;
 
@@ -570,7 +606,8 @@ static void setup_shm(void) {
 
 /* Write results. */
 
-static u32 write_results(void) {
+static u32 write_results(void)
+{
 
   s32 fd;
   u32 i, ret = 0;
@@ -578,17 +615,22 @@ static u32 write_results(void) {
   u8 cco = !!getenv("AFL_CMIN_CRASHES_ONLY"),
      caa = !!getenv("AFL_CMIN_ALLOW_ANY");
 
-  if (!strncmp(trace_file, "/dev/", 5)) {
+  if (!strncmp(trace_file, "/dev/", 5))
+  {
 
     fd = open(trace_file, O_WRONLY, 0600);
     if (fd < 0)
       PFATAL("Unable to open '%s'", trace_file);
-  } else if (!strcmp(trace_file, "-")) {
+  }
+  else if (!strcmp(trace_file, "-"))
+  {
 
     fd = dup(1);
     if (fd < 0)
       PFATAL("Unable to open stdout");
-  } else {
+  }
+  else
+  {
 
     unlink(trace_file); /* Ignore errors */
     fd = open(trace_file, O_WRONLY | O_CREAT | O_EXCL, 0600);
@@ -596,7 +638,8 @@ static u32 write_results(void) {
       PFATAL("Unable to create '%s'", trace_file);
   }
 
-  if (binary_mode) {
+  if (binary_mode)
+  {
 
     for (i = 0; i < MAP_SIZE; i++)
       if (trace_bits[i])
@@ -604,14 +647,17 @@ static u32 write_results(void) {
 
     ck_write(fd, trace_bits, MAP_SIZE, trace_file);
     close(fd);
-  } else {
+  }
+  else
+  {
 
     FILE *f = fdopen(fd, "w");
 
     if (!f)
       PFATAL("fdopen() failed");
 
-    for (i = 0; i < MAP_SIZE; i++) {
+    for (i = 0; i < MAP_SIZE; i++)
+    {
 
       if (!trace_bits[i])
         continue;
@@ -628,22 +674,28 @@ static u32 write_results(void) {
 
 /* Write results. */
 
-static u32 write_slot_val_file(u8 *filename, struct slot_val *list) {
+static u32 write_slot_val_file(u8 *filename, struct slot_val *list)
+{
 
   s32 fd;
   u32 i, ret = 0;
 
-  if (!strncmp(filename, "/dev/", 5)) {
+  if (!strncmp(filename, "/dev/", 5))
+  {
 
     fd = open(filename, O_WRONLY, 0600);
     if (fd < 0)
       PFATAL("Unable to open '%s'", filename);
-  } else if (!strcmp(filename, "-")) {
+  }
+  else if (!strcmp(filename, "-"))
+  {
 
     fd = dup(1);
     if (fd < 0)
       PFATAL("Unable to open stdout");
-  } else {
+  }
+  else
+  {
 
     unlink(filename); /* Ignore errors */
     fd = open(filename, O_WRONLY | O_CREAT | O_EXCL, 0600);
@@ -656,7 +708,8 @@ static u32 write_slot_val_file(u8 *filename, struct slot_val *list) {
   if (!f)
     PFATAL("fdopen() failed");
 
-  while (list != NULL) {
+  while (list != NULL)
+  {
     SAYF("slot is %lld, value is %d\n", list->slot, list->val);
     fprintf(f, "%10lld:%d\n", list->slot, list->val);
     list = list->next;
@@ -670,8 +723,10 @@ static u32 write_slot_val_file(u8 *filename, struct slot_val *list) {
 // update the slots for the seeds in queue; use param here to avoid modifying
 // the real head
 
-void update_slots(struct queue_entry *head) {
-  while (head) {
+void update_slots(struct queue_entry *head)
+{
+  while (head)
+  {
     head->sec_slot = head->mtime - min_mtime;
     head->min_slot = head->sec_slot / 60;
     head->hour_slot = head->sec_slot / 3600;
@@ -681,7 +736,8 @@ void update_slots(struct queue_entry *head) {
 
 /* Handle timeout signal. */
 
-static void handle_timeout(int sig) {
+static void handle_timeout(int sig)
+{
 
   child_timed_out = 1;
   if (child_pid > 0)
@@ -690,7 +746,8 @@ static void handle_timeout(int sig) {
 
 /* Execute target application. */
 
-static void run_target(char **argv) {
+static void run_target(char **argv)
+{
 
   static struct itimerval it;
   int status = 0;
@@ -706,14 +763,17 @@ static void run_target(char **argv) {
   if (child_pid < 0)
     PFATAL("fork() failed");
 
-  if (!child_pid) {
+  if (!child_pid)
+  {
 
     struct rlimit r;
 
-    if (quiet_mode) {
+    if (quiet_mode)
+    {
 
       if (dev_null_fd < 0 || dup2(dev_null_fd, 1) < 0 ||
-          dup2(dev_null_fd, 2) < 0) {
+          dup2(dev_null_fd, 2) < 0)
+      {
         *(u32 *)trace_bits = EXEC_FAIL_SIG;
         PFATAL("Descriptor initialization failed");
       }
@@ -721,7 +781,8 @@ static void run_target(char **argv) {
       close(dev_null_fd);
     }
 
-    if (mem_limit) {
+    if (mem_limit)
+    {
 
       r.rlim_max = r.rlim_cur = ((rlim_t)mem_limit) << 20;
 
@@ -748,13 +809,15 @@ static void run_target(char **argv) {
 
     setsid();
 
-    if (use_stdin) {
+    if (use_stdin)
+    {
       FILE *temp;
       s32 out_fd;
       temp = fopen(out_file, "r");
       out_fd = fileno(temp);
       s32 ret = dup2(out_fd, 0);
-      if (ret == -1) {
+      if (ret == -1)
+      {
         FATAL("Error dup2 for stdin: message is %s", strerror(errno));
       }
       close(out_fd);
@@ -768,7 +831,8 @@ static void run_target(char **argv) {
 
   /* Configure timeout, wait for child, cancel timeout. */
 
-  if (exec_tmout) {
+  if (exec_tmout)
+  {
 
     child_timed_out = 0;
     it.it_value.tv_sec = (exec_tmout / 1000);
@@ -801,7 +865,8 @@ static void run_target(char **argv) {
   if (!child_timed_out && !stop_soon && WIFSIGNALED(status))
     child_crashed = 1;
 
-  if (!quiet_mode) {
+  if (!quiet_mode)
+  {
 
     if (child_timed_out)
       SAYF(cLRD "\n+++ Program timed off +++\n" cRST);
@@ -815,7 +880,8 @@ static void run_target(char **argv) {
 
 /* Handle Ctrl-C and the like. */
 
-static void handle_stop_sig(int sig) {
+static void handle_stop_sig(int sig)
+{
 
   stop_soon = 1;
 
@@ -825,7 +891,8 @@ static void handle_stop_sig(int sig) {
 
 /* Do basic preparations - persistent fds, filenames, etc. */
 
-static void set_up_environment(void) {
+static void set_up_environment(void)
+{
 
   setenv("ASAN_OPTIONS", "abort_on_error=1:"
                          "detect_leaks=0:"
@@ -841,7 +908,8 @@ static void set_up_environment(void) {
                                             "msan_track_origins=0",
          0);
 
-  if (getenv("AFL_PRELOAD")) {
+  if (getenv("AFL_PRELOAD"))
+  {
     setenv("LD_PRELOAD", getenv("AFL_PRELOAD"), 1);
     setenv("DYLD_INSERT_LIBRARIES", getenv("AFL_PRELOAD"), 1);
   }
@@ -849,7 +917,8 @@ static void set_up_environment(void) {
 
 /* Setup signal handlers, duh. */
 
-static void setup_signal_handlers(void) {
+static void setup_signal_handlers(void)
+{
 
   struct sigaction sa;
 
@@ -874,7 +943,8 @@ static void setup_signal_handlers(void) {
 
 /* Detect @@ in args. */
 
-void detect_file_args(char **argv) {
+void detect_file_args(char **argv)
+{
 
   u32 i = 0;
   u8 *cwd = getcwd(NULL, 0);
@@ -887,11 +957,13 @@ void detect_file_args(char **argv) {
   if (!out_file)
     out_file = alloc_printf("%s/.cur_input", out_dir);
 
-  while (argv[i]) {
+  while (argv[i])
+  {
 
     u8 *aa_loc = strstr(argv[i], "@@");
 
-    if (aa_loc) {
+    if (aa_loc)
+    {
 
       use_stdin = 0;
 
@@ -923,13 +995,15 @@ void detect_file_args(char **argv) {
 
 /* Show banner. */
 
-static void show_banner(void) {
+static void show_banner(void)
+{
   SAYF(cCYA "showmaps utility " cBRI VERSION cRST " by ThePatrickStar\n");
 }
 
 /* Display usage hints. */
 
-static void usage(u8 *argv0) {
+static void usage(u8 *argv0)
+{
 
   show_banner();
 
@@ -966,30 +1040,37 @@ static void usage(u8 *argv0) {
 
 /* Find binary. */
 
-static void find_binary(u8 *fname) {
+static void find_binary(u8 *fname)
+{
 
   u8 *env_path = 0;
   struct stat st;
 
-  if (strchr(fname, '/') || !(env_path = getenv("PATH"))) {
+  if (strchr(fname, '/') || !(env_path = getenv("PATH")))
+  {
 
     target_path = ck_strdup(fname);
 
     if (stat(target_path, &st) || !S_ISREG(st.st_mode) ||
         !(st.st_mode & 0111) || st.st_size < 4)
       FATAL("Program '%s' not found or not executable", fname);
-  } else {
+  }
+  else
+  {
 
-    while (env_path) {
+    while (env_path)
+    {
 
       u8 *cur_elem, *delim = strchr(env_path, ':');
 
-      if (delim) {
+      if (delim)
+      {
 
         cur_elem = ck_alloc(delim - env_path + 1);
         memcpy(cur_elem, env_path, delim - env_path);
         delim++;
-      } else
+      }
+      else
         cur_elem = ck_strdup(env_path);
 
       env_path = delim;
@@ -1016,19 +1097,23 @@ static void find_binary(u8 *fname) {
 
 /* Prepare output directories and fds. */
 
-void setup_dirs_fds(void) {
+void setup_dirs_fds(void)
+{
 
   u8 *tmp;
 
   ACTF("Setting up output directories...");
 
-  if (mkdir(out_dir, 0700)) {
+  if (mkdir(out_dir, 0700))
+  {
 
     if (errno != EEXIST)
       PFATAL("Unable to create '%s'", out_dir);
 
     PFATAL("Directory '%s' exists!", out_dir);
-  } else {
+  }
+  else
+  {
 
     out_dir_fd = open(out_dir, O_RDONLY);
 
@@ -1041,7 +1126,8 @@ void setup_dirs_fds(void) {
   }
 
   /* The directory to store all the traces (same name as input) */
-  if (!skip_individual && !entries_only) {
+  if (!skip_individual && !entries_only)
+  {
     tmp = alloc_printf("%s/traces", out_dir);
     if (mkdir(tmp, 0700))
       PFATAL("Unable to create '%s'", tmp);
@@ -1061,7 +1147,8 @@ void setup_dirs_fds(void) {
 
 /* Append new test case to the queue. */
 
-static void add_to_queue(u8 *fname, u32 len, u64 mtime) {
+static void add_to_queue(u8 *fname, u32 len, u64 mtime)
+{
 
   struct queue_entry *q = ck_alloc(sizeof(struct queue_entry));
 
@@ -1070,9 +1157,11 @@ static void add_to_queue(u8 *fname, u32 len, u64 mtime) {
   q->mtime = mtime;
   q->prev = NULL;
 
-  if (queued_paths >= skip_no) {
+  if (queued_paths >= skip_no)
+  {
 
-    if (queued_paths == skip_no) {
+    if (queued_paths == skip_no)
+    {
       max_mtime = mtime;
       if (!given_min_mtime)
         min_mtime = mtime;
@@ -1084,12 +1173,14 @@ static void add_to_queue(u8 *fname, u32 len, u64 mtime) {
       min_mtime = mtime;
   }
 
-  if (queue_top) {
+  if (queue_top)
+  {
 
     queue_top->next = q;
     q->prev = queue_top;
     queue_top = q;
-  } else
+  }
+  else
     queue = queue_top = q;
 
   queued_paths++;
@@ -1098,12 +1189,15 @@ static void add_to_queue(u8 *fname, u32 len, u64 mtime) {
 // Append to slot_val list
 
 static void add_slot_val(struct slot_val **list, struct slot_val **list_top,
-                         u64 slot, u32 val) {
+                         u64 slot, u32 val)
+{
 
   struct slot_val *tmp = *list;
 
-  while (tmp != NULL) {
-    if (tmp->slot == slot) {
+  while (tmp != NULL)
+  {
+    if (tmp->slot == slot)
+    {
       tmp->val = val;
       return;
     }
@@ -1115,14 +1209,17 @@ static void add_slot_val(struct slot_val **list, struct slot_val **list_top,
   s->val = val;
   s->next = NULL;
 
-  if (*list_top) {
+  if (*list_top)
+  {
     (*list_top)->next = s;
     (*list_top) = s;
-  } else
+  }
+  else
     (*list) = (*list_top) = s;
 }
 
-static void read_testcases(void) {
+static void read_testcases(void)
+{
 
   struct dirent **nl;
   s32 nl_cnt;
@@ -1145,7 +1242,8 @@ static void read_testcases(void) {
 
   nl_cnt = scandir(in_dir, &nl, NULL, alphasort);
 
-  if (nl_cnt < 0) {
+  if (nl_cnt < 0)
+  {
 
     if (errno == ENOENT || errno == ENOTDIR)
 
@@ -1160,7 +1258,8 @@ static void read_testcases(void) {
     PFATAL("Unable to open '%s'", in_dir);
   }
 
-  for (i = 0; i < nl_cnt; i++) {
+  for (i = 0; i < nl_cnt; i++)
+  {
 
     struct stat st;
 
@@ -1175,7 +1274,8 @@ static void read_testcases(void) {
 
     /* This also takes care of . and .. */
 
-    if (!S_ISREG(st.st_mode) || !st.st_size || strstr(fn, "/README.txt")) {
+    if (!S_ISREG(st.st_mode) || !st.st_size || strstr(fn, "/README.txt"))
+    {
 
       ck_free(fn);
       continue;
@@ -1192,7 +1292,8 @@ static void read_testcases(void) {
 
   free(nl); /* not tracked */
 
-  if (!queued_paths) {
+  if (!queued_paths)
+  {
 
     SAYF("\n" cLRD "[-] " cRST "Looks like there are no valid test cases in "
          "the input directory! The fuzzer\n"
@@ -1208,7 +1309,8 @@ static void read_testcases(void) {
 
 /* Helper function: link() if possible, copy otherwise. */
 
-static void link_or_copy(u8 *old_path, u8 *new_path) {
+static void link_or_copy(u8 *old_path, u8 *new_path)
+{
 
   s32 i = link(old_path, new_path);
   s32 sfd, dfd;
@@ -1240,7 +1342,8 @@ static void link_or_copy(u8 *old_path, u8 *new_path) {
 
 /* Main entry point */
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
 
   s32 opt;
   u8 mem_limit_given = 0, timeout_given = 0, skip_no_given = 0;
@@ -1249,7 +1352,8 @@ int main(int argc, char **argv) {
 
   while ((opt = getopt(argc, argv, "+i:o:f:m:t:S:T:Eeqbcs")) > 0)
 
-    switch (opt) {
+    switch (opt)
+    {
 
     case 'i': /* input dir */
 
@@ -1272,7 +1376,8 @@ int main(int argc, char **argv) {
       out_file = optarg;
       break;
 
-    case 'm': {
+    case 'm':
+    {
 
       u8 suffix = 'M';
 
@@ -1280,8 +1385,8 @@ int main(int argc, char **argv) {
         FATAL("Multiple -m options not supported");
       mem_limit_given = 1;
 
-      if (!strcmp(optarg, "none")) {
-
+      if (!strcmp(optarg, "none"))
+      {
         mem_limit = 0;
         break;
       }
@@ -1289,8 +1394,8 @@ int main(int argc, char **argv) {
       if (sscanf(optarg, "%llu%c", &mem_limit, &suffix) < 1 || optarg[0] == '-')
         FATAL("Bad syntax used for -m");
 
-      switch (suffix) {
-
+      switch (suffix)
+      {
       case 'T':
         mem_limit *= 1024 * 1024;
         break;
@@ -1322,7 +1427,8 @@ int main(int argc, char **argv) {
         FATAL("Multiple -t options not supported");
       timeout_given = 1;
 
-      if (strcmp(optarg, "none")) {
+      if (strcmp(optarg, "none"))
+      {
         exec_tmout = atoi(optarg);
 
         if (exec_tmout < 20 || optarg[0] == '-')
@@ -1399,7 +1505,8 @@ int main(int argc, char **argv) {
   if ((!entries_only && optind == argc) || !out_dir || !in_dir)
     usage(argv[0]);
 
-  if (!entries_only) {
+  if (!entries_only)
+  {
     setup_shm();
     setup_signal_handlers();
 
@@ -1407,7 +1514,8 @@ int main(int argc, char **argv) {
 
     find_binary(argv[optind]);
 
-    if (!quiet_mode) {
+    if (!quiet_mode)
+    {
       show_banner();
       ACTF("Executing '%s'...\n", target_path);
     }
@@ -1441,22 +1549,27 @@ int main(int argc, char **argv) {
   u8 ret_new_bits = 0;
 
   // the main working loop
-  while (queue_cur != NULL) {
+  while (queue_cur != NULL)
+  {
 
     queue_cur->has_new_cov = 0;
     //    SAYF("current fname is %s, queue_cur mtime is: %lld, sec_slot is: %lld, min_slot is: %lld, hour_slot is: %lld\n",\
         //     queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot, queue_cur->min_slot, queue_cur->hour_slot);
     u64 slot = queue_cur->sec_slot;
-    if (current_no >= skip_no && (int)slot >= 0) {
+    if (current_no >= skip_no && (int)slot >= 0)
+    {
       SAYF("current fname is %s, queue_cur mtime is: %lld, sec_slot is: %lld\n",
            queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot);
-    } else {
+    }
+    else
+    {
       SAYF("skipping but still executing %s, queue_cur mtime is: %lld, "
            "sec_slot is: %lld\n",
            queue_cur->fname, queue_cur->mtime, queue_cur->sec_slot);
     }
 
-    if (!entries_only) {
+    if (!entries_only)
+    {
       // create hard link of current item to the out_file
       link_or_copy(queue_cur->fname, out_file);
 
@@ -1466,7 +1579,8 @@ int main(int argc, char **argv) {
       // delete the out_file
       unlink(out_file);
 
-      if (!skip_individual && current_no >= skip_no) {
+      if (!skip_individual && current_no >= skip_no)
+      {
 
         // setup the path for the new trace file
         pure_fname = strrchr(queue_cur->fname, '/');
@@ -1488,19 +1602,21 @@ int main(int argc, char **argv) {
       // update virgin bits
       ret_new_bits = has_new_bits(virgin_bits);
 
-      if (ret_new_bits) {
+      if (ret_new_bits)
+      {
         queue_cur->has_new_cov = 1;
         cov_entries_no += 1;
       }
 
       u32 bitmap_size = count_non_255_bytes(virgin_bits);
       // SAYF("bitmap_size is %d\n", bitmap_size);
-      if (current_no >= skip_no)
+      if (current_no >= skip_no && (int)slot >= 0)
         add_slot_val(&slot_edge, &slot_edge_top, slot, bitmap_size);
     }
 
     entries_no++;
-    if (current_no >= skip_no) {
+    if (current_no >= skip_no && (int)slot >= 0)
+    {
       add_slot_val(&slot_entry, &slot_entry_top, slot, entries_no);
       if (queue_cur->has_new_cov)
         add_slot_val(&cov_slot_entry, &cov_slot_entry_top, slot,
@@ -1512,7 +1628,8 @@ int main(int argc, char **argv) {
     current_no++;
   }
 
-  if (!entries_only) {
+  if (!entries_only)
+  {
 
     u8 *slot_edge_file = alloc_printf("%s/slot_edge.txt", out_dir);
 
