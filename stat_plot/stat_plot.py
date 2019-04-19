@@ -64,27 +64,29 @@ def align_data(fuzzer_dict, misc_dict):
         slots = []
         vals = []
         first = True
-        with open(data_file) as df:
-            lines = df.readlines()
+        
+        if os.path.exists(data_file):
+            with open(data_file) as df:
+                lines = df.readlines()
 
-            for line in lines:
-                tokens = line.split(":")
-                # skip illegal line
-                if len(tokens) != 2:
-                    continue
-                slot = int(tokens[0])
-                val = int(tokens[1])
+                for line in lines:
+                    tokens = line.split(":")
+                    # skip illegal line
+                    if len(tokens) != 2:
+                        continue
+                    slot = int(tokens[0])
+                    val = int(tokens[1])
 
-                if first:
-                    if slot != 0:
-                        slots.append(0)
-                        vals.append(0)
-                    first = False
+                    if first:
+                        if slot != 0:
+                            slots.append(0)
+                            vals.append(0)
+                        first = False
 
-                if slot > max_slot:
-                    break
-                slots.append(slot)
-                vals.append(val)
+                    if slot > max_slot:
+                        break
+                    slots.append(slot)
+                    vals.append(val)
 
         # handle the case when the txt file is empty
         if len(slots) == 0:
