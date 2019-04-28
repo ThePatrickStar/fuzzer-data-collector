@@ -64,7 +64,7 @@ def align_data(fuzzer_dict, misc_dict):
         slots = []
         vals = []
         first = True
-        
+
         if os.path.exists(data_file):
             with open(data_file) as df:
                 lines = df.readlines()
@@ -134,11 +134,13 @@ def detailed_plot(fuzzer_dict, misc_dict, n):
 
             out_dir = misc_dict['out_dir'] + '/detailed/' + fuzzer_name + '/'
             mkdirs(out_dir)
-            base_filename = out_dir + misc_dict["project"] + "_detailed" + misc_dict["file_postfix"]
+            base_filename = out_dir + \
+                misc_dict["project"] + "_detailed" + misc_dict["file_postfix"]
             filename_pdf = base_filename + '.pdf'
             filename_png = base_filename + '.png'
 
-            ax.set(xlabel='time ({})'.format(display_bucket(misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
+            ax.set(xlabel='time ({})'.format(display_bucket(
+                misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
             ax.legend()
             fig.savefig(filename_pdf)
             fig.savefig(filename_png)
@@ -171,7 +173,8 @@ def plot_files(fuzzer_dict, misc_dict, ax, ax_s):
     bins = []
 
     for col in entire_data_col:
-        mean, min_, max_ = mean_confidence_interval(col, misc_dict['confidence_lvl'])
+        mean, min_, max_ = mean_confidence_interval(
+            col, misc_dict['confidence_lvl'])
         means.append(mean)
         mins.append(max(min_, 0))
         maxs.append(max_)
@@ -192,18 +195,24 @@ def plot_files(fuzzer_dict, misc_dict, ax, ax_s):
     bins = [int(x/step) for x in bins[0::step]]
 
     if set_line_color and set_line_style:
-        ax.plot(bins[0:], means[0::step], label=fuzzer_name, linestyle=fuzzer_dict['line_style']
-                , color=fuzzer_dict['line_color'])
-        ax_s.plot(bins[0:], means[0::step], label=fuzzer_name, linestyle=fuzzer_dict['line_style']
-                  , color=fuzzer_dict['line_color'])
-        ax.fill_between(bins[0:], mins[0::step], maxs[0::step], facecolor=fuzzer_dict['line_color'], alpha=0.2)
+        ax.plot(bins[0:], means[0::step], label=fuzzer_name,
+                linestyle=fuzzer_dict['line_style'], color=fuzzer_dict['line_color'])
+        ax_s.plot(bins[0:], means[0::step], label=fuzzer_name,
+                  linestyle=fuzzer_dict['line_style'], color=fuzzer_dict['line_color'])
+        ax.fill_between(bins[0:], mins[0::step], maxs[0::step],
+                        facecolor=fuzzer_dict['line_color'], alpha=0.2)
     elif set_line_color:
-        ax.plot(bins[0:], means[0::step], label=fuzzer_name, color=fuzzer_dict['line_color'])
-        ax_s.plot(bins[0:], means[0::step], label=fuzzer_name, color=fuzzer_dict['line_color'])
-        ax.fill_between(bins[0:], mins[0::step], maxs[0::step], facecolor=fuzzer_dict['line_color'], alpha=0.2)
+        ax.plot(bins[0:], means[0::step], label=fuzzer_name,
+                color=fuzzer_dict['line_color'])
+        ax_s.plot(bins[0:], means[0::step], label=fuzzer_name,
+                  color=fuzzer_dict['line_color'])
+        ax.fill_between(bins[0:], mins[0::step], maxs[0::step],
+                        facecolor=fuzzer_dict['line_color'], alpha=0.2)
     elif set_line_style:
-        ax.plot(bins[0:], means[0::step], label=fuzzer_name, linestyle=fuzzer_dict['line_style'])
-        ax_s.plot(bins[0:], means[0::step], label=fuzzer_name, linestyle=fuzzer_dict['line_style'])
+        ax.plot(bins[0:], means[0::step], label=fuzzer_name,
+                linestyle=fuzzer_dict['line_style'])
+        ax_s.plot(bins[0:], means[0::step], label=fuzzer_name,
+                  linestyle=fuzzer_dict['line_style'])
         ax.fill_between(bins[0:], mins[0::step], maxs[0::step], alpha=0.2)
     else:
         ax.plot(bins[0:], means[0::step], label=fuzzer_name)
@@ -223,9 +232,11 @@ def student_t_test(filename, open_mode, fuzzers_dict):
                     checked.append((fuzzer_name1, fuzzer_name2))
                     checked.append((fuzzer_name2, fuzzer_name1))
 
-                    p_value = scipy.stats.ttest_ind(f1['final_vals'], f2['final_vals'])[1]
+                    p_value = scipy.stats.ttest_ind(
+                        f1['final_vals'], f2['final_vals'])[1]
 
-                    gsf.write("pvalue: {} --- {} : {}\n".format(fuzzer_name1, fuzzer_name2, p_value))
+                    gsf.write(
+                        "pvalue: {} --- {} : {}\n".format(fuzzer_name1, fuzzer_name2, p_value))
                     gsf.write("------------------\n")
         gsf.write("\n")
 
@@ -242,10 +253,13 @@ def mw_u_test(filename, open_mode, fuzzers_dict):
                     checked.append((fuzzer_name1, fuzzer_name2))
                     checked.append((fuzzer_name2, fuzzer_name1))
                     try:
-                        p_value = scipy.stats.mannwhitneyu(f1['final_vals'], f2['final_vals'])[1]
-                        gsf.write("pvalue: {} --- {} : {}\n".format(fuzzer_name1, fuzzer_name2, p_value))
+                        p_value = scipy.stats.mannwhitneyu(
+                            f1['final_vals'], f2['final_vals'])[1]
+                        gsf.write(
+                            "pvalue: {} --- {} : {}\n".format(fuzzer_name1, fuzzer_name2, p_value))
                     except ValueError as e:
-                        gsf.write("ERROR: {} --- {} : {}\n".format(fuzzer_name1, fuzzer_name2, e))
+                        gsf.write(
+                            "ERROR: {} --- {} : {}\n".format(fuzzer_name1, fuzzer_name2, e))
                     gsf.write("------------------\n")
         gsf.write("\n")
 
@@ -277,10 +291,13 @@ def calculate_a12s(filename, open_mode, fuzzers_dict):
                     checked.append((fuzzer_name2, fuzzer_name1))
 
                     # assume f1 and f2 have the same len
-                    a12 = calculate_a12(len(f1['final_vals']), f1['final_vals'], f2['final_vals'])
+                    a12 = calculate_a12(
+                        len(f1['final_vals']), f1['final_vals'], f2['final_vals'])
 
-                    gsf.write("A12: {} <= {} : {}\n".format(fuzzer_name1, fuzzer_name2, a12))
-                    gsf.write("A12: {} >= {} : {}\n".format(fuzzer_name1, fuzzer_name2, (1.0-a12)))
+                    gsf.write("A12: {} <= {} : {}\n".format(
+                        fuzzer_name1, fuzzer_name2, a12))
+                    gsf.write("A12: {} >= {} : {}\n".format(
+                        fuzzer_name1, fuzzer_name2, (1.0-a12)))
                     gsf.write("------------------\n")
         gsf.write("\n")
 
@@ -300,12 +317,15 @@ def generate_plots(fuzzers_dict, misc_dict):
         plot_files(fuzzer_dict, misc_dict, ax, ax_s)
 
     out_dir = misc_dict['out_dir'] + '/'
-    base_filename = out_dir + misc_dict["project"] + "_overall" + misc_dict["file_postfix"]
+    base_filename = out_dir + \
+        misc_dict["project"] + "_overall" + misc_dict["file_postfix"]
     filename_pdf = base_filename + '.pdf'
     filename_png = base_filename + '.png'
     filename_pdf_s = base_filename + '_simple.pdf'
     filename_png_s = base_filename + '_simple.png'
-    general_stats_file = out_dir + misc_dict["project"] + "_overall_stats" + misc_dict["file_postfix"] + ".txt"
+    general_stats_file = out_dir + \
+        misc_dict["project"] + "_overall_stats" + \
+        misc_dict["file_postfix"] + ".txt"
 
     student_t_test(general_stats_file, 'w', fuzzers_dict)
 
@@ -313,14 +333,15 @@ def generate_plots(fuzzers_dict, misc_dict):
 
     calculate_a12s(general_stats_file, 'a', fuzzers_dict)
 
-    ax.set(xlabel='time ({})'.format(display_bucket(misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
-    if misc_dict['large_font']:
+    ax.set(xlabel='time ({})'.format(display_bucket(
+        misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
+    if 'large_font' in misc_dict and misc_dict['large_font']:
         ax.legend(fontsize=20)
     else:
         ax.legend()
-    if misc_dict['large_font']:
+    if 'large_font' in misc_dict and misc_dict['large_font']:
         for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
-                         ax.get_xticklabels()):
+                     ax.get_xticklabels()):
             item.set_fontsize(15)
 
         for item in (ax.get_yticklabels()):
@@ -332,14 +353,15 @@ def generate_plots(fuzzers_dict, misc_dict):
     fig.savefig(filename_pdf, bbox_inches='tight', dpi=100)
     fig.savefig(filename_png, bbox_inches='tight', dpi=100)
 
-    ax_s.set(xlabel='time ({})'.format(display_bucket(misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
-    if misc_dict['large_font']:
+    ax_s.set(xlabel='time ({})'.format(display_bucket(
+        misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
+    if 'large_font' in misc_dict and misc_dict['large_font']:
         ax_s.legend(fontsize=20)
     else:
         ax_s.legend()
-    if misc_dict['large_font']:
+    if 'large_font' in misc_dict and misc_dict['large_font']:
         for item in ([ax_s.title, ax_s.xaxis.label, ax_s.yaxis.label] +
-                         ax_s.get_xticklabels()):
+                     ax_s.get_xticklabels()):
             item.set_fontsize(15)
 
         for tick in ax_s.get_xticklabels():
@@ -365,7 +387,9 @@ def generate_stat_data(fuzzers_dict, misc_dict):
 
     out_dir = misc_dict['out_dir'] + '/'
     mkdirs(out_dir)
-    general_stats_file = out_dir + misc_dict["project"] + "_overall_stats" + misc_dict["file_postfix"] + ".txt"
+    general_stats_file = out_dir + \
+        misc_dict["project"] + "_overall_stats" + \
+        misc_dict["file_postfix"] + ".txt"
 
     student_t_test(general_stats_file, 'w', fuzzers_dict)
 
@@ -412,14 +436,14 @@ def generate_box_plots(fuzzers_dict, misc_dict):
 
     # notch may look weird
     # https://stackoverflow.com/questions/26291082/weird-behavior-of-matplotlibs-boxplot-when-using-the-notch-shape
-    bp = ax.boxplot(box_data, labels=fuzzer_names, sym='k+', notch=misc_dict['notch']
-                    , patch_artist=False, widths=0.5, showfliers=False)
+    bp = ax.boxplot(box_data, labels=fuzzer_names, sym='k+',
+                    notch=misc_dict['notch'], patch_artist=False, widths=0.5, showfliers=False)
 
     # this might be buggy as the order of bp['boxes'] may not follow the specified order
     # this is to set the color for the boxes
     # for box, color, line_style in zip(bp['boxes'], box_colors, line_styles):
     #     box.set(facecolor=color)
-        # box.set(linestyle=line_style)
+    # box.set(linestyle=line_style)
 
     # this is buggy
     # ['whiskers', 'fliers', 'means', 'medians', 'caps']
@@ -456,7 +480,7 @@ def generate_box_plots(fuzzers_dict, misc_dict):
     ax.set(title=misc_dict['plot_title'])
 
     for item in ([ax.title, ax.xaxis.label] +
-                     ax.get_xticklabels()):
+                 ax.get_xticklabels()):
         item.set_fontsize(30)
 
     for item in (ax.get_yticklabels()):
@@ -495,7 +519,8 @@ def generate_scatter_plots(fuzzers_dict, misc_dict):
             set_line_color = 'line_color' in fuzzer
 
             if set_line_color:
-                ax.scatter(xs, ys, c=fuzzer['line_color'], alpha=1, s=20, label=fuzzer_name)
+                ax.scatter(xs, ys, c=fuzzer['line_color'],
+                           alpha=1, s=20, label=fuzzer_name)
             else:
                 ax.scatter(xs, ys, alpha=1, s=20, label=fuzzer_name)
 
@@ -535,7 +560,8 @@ def draw_histograms(histtype, figure_no, xss, colors, fuzzer_names, misc_dict):
     fig = plt.figure(figure_no)
     ax = fig.add_subplot(111)
     n_bins = misc_dict['n_bins']
-    ax.hist(x=xss, bins=n_bins, histtype=histtype, color=colors, label=fuzzer_names)
+    ax.hist(x=xss, bins=n_bins, histtype=histtype,
+            color=colors, label=fuzzer_names)
 
     # ax.set_xscale('log')
     ax.set_yscale('log')
@@ -563,7 +589,8 @@ def draw_histograms(histtype, figure_no, xss, colors, fuzzer_names, misc_dict):
 
     out_dir = misc_dict['out_dir'] + '/'
     mkdirs(out_dir)
-    base_filename = out_dir + misc_dict["project"] + misc_dict["file_postfix"] + '-' + histtype
+    base_filename = out_dir + \
+        misc_dict["project"] + misc_dict["file_postfix"] + '-' + histtype
     filename_pdf = base_filename + '.pdf'
     filename_png = base_filename + '.png'
 
@@ -603,4 +630,3 @@ def generate_histograms(fuzzers_dict, misc_dict):
     draw_histograms('barstacked', 2, xss, colors, fuzzer_names, misc_dict)
     draw_histograms('step', 3, xss, colors, fuzzer_names, misc_dict)
     draw_histograms('stepfilled', 4, xss, colors, fuzzer_names, misc_dict)
-
