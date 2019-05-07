@@ -94,6 +94,9 @@ def align_data(fuzzer_dict, misc_dict):
             vals.append(0)
             slots.append(1)
             vals.append(0)
+        elif len(slots) == 1:
+            slots.append(1)
+            vals.append(vals[0])
 
         slot_idx = 1
         new_vals = []
