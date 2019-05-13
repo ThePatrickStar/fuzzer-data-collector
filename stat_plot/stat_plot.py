@@ -338,10 +338,13 @@ def generate_plots(fuzzers_dict, misc_dict):
 
     ax.set(xlabel='time ({})'.format(display_bucket(
         misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
-    if 'large_font' in misc_dict and misc_dict['large_font']:
-        ax.legend(fontsize=20)
+    if 'no_legend' in misc_dict and misc_dict['no_legend']:
+        pass
     else:
-        ax.legend()
+        if 'large_font' in misc_dict and misc_dict['large_font']:
+            ax.legend(fontsize=20)
+        else:
+            ax.legend()
     if 'large_font' in misc_dict and misc_dict['large_font']:
         for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
                      ax.get_xticklabels()):
@@ -358,10 +361,13 @@ def generate_plots(fuzzers_dict, misc_dict):
 
     ax_s.set(xlabel='time ({})'.format(display_bucket(
         misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
-    if 'large_font' in misc_dict and misc_dict['large_font']:
-        ax_s.legend(fontsize=20)
+    if 'no_legend' in misc_dict and misc_dict['no_legend']:
+        pass
     else:
-        ax_s.legend()
+        if 'large_font' in misc_dict and misc_dict['large_font']:
+            ax_s.legend(fontsize=20)
+        else:
+            ax_s.legend()
     if 'large_font' in misc_dict and misc_dict['large_font']:
         for item in ([ax_s.title, ax_s.xaxis.label, ax_s.yaxis.label] +
                      ax_s.get_xticklabels()):

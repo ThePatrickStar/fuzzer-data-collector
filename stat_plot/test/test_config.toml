@@ -63,3 +63,5 @@
     # max_time is in hours
     max_time = 24
     stat_type = "overall"
+    large_font = false
+    no_legend = false
