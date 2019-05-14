@@ -392,7 +392,7 @@ def generate_stat_data(fuzzers_dict, misc_dict):
         data_file = fuzzer['data_files'][0]
         with open(data_file) as df:
             lines = df.readlines()
-            fuzzer['final_vals'] = [int(x) for x in lines]
+            fuzzer['final_vals'] = [float(x.strip()) for x in lines]
 
     out_dir = misc_dict['out_dir'] + '/'
     mkdirs(out_dir)
