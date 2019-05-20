@@ -145,8 +145,8 @@ def detailed_plot(fuzzer_dict, misc_dict, n):
             ax.set(xlabel='time ({})'.format(display_bucket(
                 misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
             ax.legend()
-            fig.savefig(filename_pdf)
-            fig.savefig(filename_png)
+            fig.savefig(filename_pdf, bbox_inches='tight', dpi=100)
+            fig.savefig(filename_png, bbox_inches='tight', dpi=100)
 
 
 # add plots to ax; write the computed data out
@@ -495,8 +495,8 @@ def generate_box_plots(fuzzers_dict, misc_dict):
     for item in (ax.get_yticklabels()):
         item.set_fontsize(20)
 
-    fig.savefig(filename_pdf)
-    fig.savefig(filename_png)
+    fig.savefig(filename_pdf, bbox_inches='tight', dpi=100)
+    fig.savefig(filename_png, bbox_inches='tight', dpi=100)
 
 
 def generate_scatter_plots(fuzzers_dict, misc_dict):
