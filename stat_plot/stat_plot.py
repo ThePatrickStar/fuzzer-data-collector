@@ -192,12 +192,19 @@ def plot_files(fuzzer_dict, misc_dict, ax, ax_s):
 
     set_line_color = 'line_color' in fuzzer_dict
     set_line_style = 'line_style' in fuzzer_dict
+    set_marker = 'marker' in fuzzer_dict
 
     step = get_step(misc_dict)
 
     bins = [int(x/step) for x in bins[0::step]]
 
-    if set_line_color and set_line_style:
+    if set_line_color and set_line_style and set_marker:
+        ax.plot(bins[0:], means[0::step], label=fuzzer_name, linestyle=fuzzer_dict['line_style']
+                , color=fuzzer_dict['line_color'], marker=fuzzer_dict['marker'], ms=6)
+        ax_s.plot(bins[0:], means[0::step], label=fuzzer_name, linestyle=fuzzer_dict['line_style']
+                  , color=fuzzer_dict['line_color'], marker=fuzzer_dict['marker'], ms=6)
+        ax.fill_between(bins[0:], mins[0::step], maxs[0::step], facecolor=fuzzer_dict['line_color'], alpha=0.2)
+    elif set_line_color and set_line_style:
         ax.plot(bins[0:], means[0::step], label=fuzzer_name,
                 linestyle=fuzzer_dict['line_style'], color=fuzzer_dict['line_color'])
         ax_s.plot(bins[0:], means[0::step], label=fuzzer_name,
@@ -338,11 +345,13 @@ def generate_plots(fuzzers_dict, misc_dict):
 
     ax.set(xlabel='time ({})'.format(display_bucket(
         misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
+    ax.set(title=misc_dict['plot_title'])
+    ax.set_title(misc_dict['plot_title'], fontsize=18, color='black')
     if 'no_legend' in misc_dict and misc_dict['no_legend']:
         pass
     else:
         if 'large_font' in misc_dict and misc_dict['large_font']:
-            ax.legend(fontsize=20)
+            ax.legend(fontsize=15)
         else:
             ax.legend()
     if 'large_font' in misc_dict and misc_dict['large_font']:
@@ -416,6 +425,7 @@ def generate_box_plots(fuzzers_dict, misc_dict):
     box_data = []
     box_colors = []
     line_styles = []
+    marker = []
     fuzzer_names = list(fuzzers_dict.keys())
     fuzzer_names.sort()
     for fuzzer_name in fuzzer_names:
@@ -426,6 +436,8 @@ def generate_box_plots(fuzzers_dict, misc_dict):
         box_colors.append(fuzzer['box_color'])
 
         line_styles.append(fuzzer['line_style'])
+
+        marker.append(fuzzer['marker'])
 
         if not os.path.exists(data_file):
             fuzzer['final_vals'] = []
