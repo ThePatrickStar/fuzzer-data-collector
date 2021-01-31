@@ -100,11 +100,13 @@ def align_data(fuzzer_dict, misc_dict):
 
         slot_idx = 1
         new_vals = []
+        val_idx = 0
 
         for i in range(0, max_slot):
             if i > slots[slot_idx]:
+                val_idx = min(len(vals)-1, val_idx + 1)
                 slot_idx = min(len(slots)-1, slot_idx + 1)
-            new_vals.append(vals[slot_idx-1])
+            new_vals.append(vals[val_idx])
 
         new_data_file = aligned_dir + str(j) + ".txt"
         with open(new_data_file, "w") as out_file:
@@ -345,8 +347,9 @@ def generate_plots(fuzzers_dict, misc_dict):
 
     ax.set(xlabel='time ({})'.format(display_bucket(
         misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
-    ax.set(title=misc_dict['plot_title'])
-    ax.set_title(misc_dict['plot_title'], fontsize=18, color='black')
+    if 'plot_title' in misc_dict:
+        ax.set(title=misc_dict['plot_title'])
+        ax.set_title(misc_dict['plot_title'], fontsize=18, color='black')
     if 'no_legend' in misc_dict and misc_dict['no_legend']:
         pass
     else:
@@ -497,8 +500,8 @@ def generate_box_plots(fuzzers_dict, misc_dict):
 
     # ax.grid(which='major', axis='both', linestyle='--')
     ax.grid(False)
-
-    ax.set(title=misc_dict['plot_title'])
+    if 'plot_title' in misc_dict:
+        ax.set(title=misc_dict['plot_title'])
 
     for item in ([ax.title, ax.xaxis.label] +
                  ax.get_xticklabels()):
@@ -547,7 +550,8 @@ def generate_scatter_plots(fuzzers_dict, misc_dict):
 
     # ax.set_xscale('log')
     ax.set_yscale('log')
-    ax.set(title=misc_dict['plot_title'])
+    if 'plot_title' in misc_dict:
+        ax.set(title=misc_dict['plot_title'])
     ax.set(xlabel=misc_dict['xlabel'], ylabel=misc_dict['ylabel'])
 
     large_font = misc_dict['large_font']
@@ -586,7 +590,8 @@ def draw_histograms(histtype, figure_no, xss, colors, fuzzer_names, misc_dict):
 
     # ax.set_xscale('log')
     ax.set_yscale('log')
-    ax.set(title=misc_dict['plot_title'])
+    if 'plot_title' in misc_dict:
+        ax.set(title=misc_dict['plot_title'])
     ax.set(xlabel=misc_dict['xlabel'], ylabel=misc_dict['ylabel'])
     # scientific notation for x axis labels
     # ax.ticklabel_format(style='sci', axis='x', scilimits=(1, 4))
