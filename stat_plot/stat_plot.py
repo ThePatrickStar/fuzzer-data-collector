@@ -8,21 +8,21 @@ from matplotlib.patches import Polygon
 
 def convert_linestyle(linestyle):
     if linestyle == 'loosely dotted':
-        return (0, (1, 10))
+        return (0, (1, 5))
     elif linestyle == 'densely dotted':
         return (0, (1, 1))
     elif linestyle == 'loosely dashed':
-        return (0, (5, 10))
+        return (0, (5, 8))
     elif linestyle == 'densely dashed':
         return (0, (5, 1))
     elif linestyle == 'loosely dashdot':
-        return (0, (3, 10, 1, 10))
+        return (0, (3, 8, 1, 8))
     elif linestyle == 'densely dashdot':
         return (0, (3, 1, 1, 1))
-    elif linestyle == 'dashdotdotted':
+    elif linestyle == 'dashdotdot':
         return (0, (3, 5, 1, 5, 1, 5))
     elif linestyle == 'loosely dashdotdot':
-        return (0, (3, 10, 1, 10, 1, 10))
+        return (0, (3, 8, 1, 8, 1, 8))
     elif linestyle == 'densely dashdotdot':
         return (0, (3, 1, 1, 1, 1, 1))
     elif linestyle in ['solid', 'dotted', 'dashed', 'dashdot']:
