@@ -6,6 +6,31 @@ import os
 from matplotlib.patches import Polygon
 
 
+def convert_linestyle(linestyle):
+    if linestyle == 'loosely dotted':
+        return (0, (1, 10))
+    elif linestyle == 'densely dotted':
+        return (0, (1, 1))
+    elif linestyle == 'loosely dashed':
+        return (0, (5, 10))
+    elif linestyle == 'densely dashed':
+        return (0, (5, 1))
+    elif linestyle == 'loosely dashdotted':
+        return (0, (3, 10, 1, 10))
+    elif linestyle == 'densely dashdotted':
+        return (0, (3, 1, 1, 1))
+    elif linestyle == 'dashdotdotted':
+        return (0, (3, 5, 1, 5, 1, 5))
+    elif linestyle == 'loosely dashdotdotted':
+        return (0, (3, 10, 1, 10, 1, 10))
+    elif linestyle == 'densely dashdotdotted':
+        return (0, (3, 1, 1, 1, 1, 1))
+    elif linestyle in ['solid', 'dotted', 'dashed', 'dashdot']:
+        return linestyle
+    # invalid linestyle
+    else:
+        return 'invalid'
+
 def mean_confidence_interval(data, confidence):
     a = 1.0 * np.array(data)
     n = len(a)
@@ -201,16 +226,16 @@ def plot_files(fuzzer_dict, misc_dict, ax, ax_s):
     bins = [int(x/step) for x in bins[0::step]]
 
     if set_line_color and set_line_style and set_marker:
-        ax.plot(bins[0:], means[0::step], label=fuzzer_name, linestyle=fuzzer_dict['line_style']
+        ax.plot(bins[0:], means[0::step], label=fuzzer_name, linestyle=convert_linestyle(fuzzer_dict['line_style'])
                 , color=fuzzer_dict['line_color'], marker=fuzzer_dict['marker'], ms=6)
-        ax_s.plot(bins[0:], means[0::step], label=fuzzer_name, linestyle=fuzzer_dict['line_style']
+        ax_s.plot(bins[0:], means[0::step], label=fuzzer_name, linestyle=convert_linestyle(fuzzer_dict['line_style'])
                   , color=fuzzer_dict['line_color'], marker=fuzzer_dict['marker'], ms=6)
         ax.fill_between(bins[0:], mins[0::step], maxs[0::step], facecolor=fuzzer_dict['line_color'], alpha=0.2)
     elif set_line_color and set_line_style:
         ax.plot(bins[0:], means[0::step], label=fuzzer_name,
-                linestyle=fuzzer_dict['line_style'], color=fuzzer_dict['line_color'])
+                linestyle=convert_linestyle(fuzzer_dict['line_style']), color=fuzzer_dict['line_color'])
         ax_s.plot(bins[0:], means[0::step], label=fuzzer_name,
-                  linestyle=fuzzer_dict['line_style'], color=fuzzer_dict['line_color'])
+                  linestyle=convert_linestyle(fuzzer_dict['line_style']), color=fuzzer_dict['line_color'])
         ax.fill_between(bins[0:], mins[0::step], maxs[0::step],
                         facecolor=fuzzer_dict['line_color'], alpha=0.2)
     elif set_line_color:
@@ -222,9 +247,9 @@ def plot_files(fuzzer_dict, misc_dict, ax, ax_s):
                         facecolor=fuzzer_dict['line_color'], alpha=0.2)
     elif set_line_style:
         ax.plot(bins[0:], means[0::step], label=fuzzer_name,
-                linestyle=fuzzer_dict['line_style'])
+                linestyle=convert_linestyle(fuzzer_dict['line_style']))
         ax_s.plot(bins[0:], means[0::step], label=fuzzer_name,
-                  linestyle=fuzzer_dict['line_style'])
+                  linestyle=convert_linestyle(fuzzer_dict['line_style']))
         ax.fill_between(bins[0:], mins[0::step], maxs[0::step], alpha=0.2)
     else:
         ax.plot(bins[0:], means[0::step], label=fuzzer_name)
