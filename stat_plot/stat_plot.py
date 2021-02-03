@@ -379,16 +379,16 @@ def generate_plots(fuzzers_dict, misc_dict):
         pass
     else:
         if 'large_font' in misc_dict and misc_dict['large_font']:
-            ax.legend(fontsize=15)
+            ax.legend(fontsize=20)
         else:
             ax.legend()
     if 'large_font' in misc_dict and misc_dict['large_font']:
         for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
                      ax.get_xticklabels()):
-            item.set_fontsize(15)
+            item.set_fontsize(20)
 
         for item in (ax.get_yticklabels()):
-            item.set_fontsize(15)
+            item.set_fontsize(20)
 
         for tick in ax.get_xticklabels():
             tick.set_rotation(45)
@@ -408,13 +408,13 @@ def generate_plots(fuzzers_dict, misc_dict):
     if 'large_font' in misc_dict and misc_dict['large_font']:
         for item in ([ax_s.title, ax_s.xaxis.label, ax_s.yaxis.label] +
                      ax_s.get_xticklabels()):
-            item.set_fontsize(15)
+            item.set_fontsize(20)
 
         for tick in ax_s.get_xticklabels():
             tick.set_rotation(45)
 
         for item in (ax_s.get_yticklabels()):
-            item.set_fontsize(15)
+            item.set_fontsize(20)
 
     fig_s.savefig(filename_pdf_s, bbox_inches='tight', dpi=100)
     fig_s.savefig(filename_png_s, bbox_inches='tight', dpi=100)
