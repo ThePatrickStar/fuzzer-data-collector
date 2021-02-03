@@ -15,15 +15,15 @@ def convert_linestyle(linestyle):
         return (0, (5, 10))
     elif linestyle == 'densely dashed':
         return (0, (5, 1))
-    elif linestyle == 'loosely dashdotted':
+    elif linestyle == 'loosely dashdot':
         return (0, (3, 10, 1, 10))
-    elif linestyle == 'densely dashdotted':
+    elif linestyle == 'densely dashdot':
         return (0, (3, 1, 1, 1))
     elif linestyle == 'dashdotdotted':
         return (0, (3, 5, 1, 5, 1, 5))
-    elif linestyle == 'loosely dashdotdotted':
+    elif linestyle == 'loosely dashdotdot':
         return (0, (3, 10, 1, 10, 1, 10))
-    elif linestyle == 'densely dashdotdotted':
+    elif linestyle == 'densely dashdotdot':
         return (0, (3, 1, 1, 1, 1, 1))
     elif linestyle in ['solid', 'dotted', 'dashed', 'dashdot']:
         return linestyle
