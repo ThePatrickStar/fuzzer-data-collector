@@ -370,6 +370,10 @@ def generate_plots(fuzzers_dict, misc_dict):
 
     calculate_a12s(general_stats_file, 'a', fuzzers_dict)
 
+    if 'y_start_0' in misc_dict and misc_dict['y_start_0']:
+        ax.set_ylim(ymin=0)
+        ax_s.set_ylim(ymin=0)
+
     ax.set(xlabel='time ({})'.format(display_bucket(
         misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
     if 'plot_title' in misc_dict:

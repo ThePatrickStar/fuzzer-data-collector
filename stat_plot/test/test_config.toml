@@ -65,3 +65,4 @@
     stat_type = "overall"
     large_font = false
     no_legend = false
+    y_start_0 = true
