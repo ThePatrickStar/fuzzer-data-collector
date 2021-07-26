@@ -93,7 +93,13 @@ static struct slot_val *slot_edge,    /* N.O. of edges covered over time   */
     *slot_edge_top,                   /* Top of slot_edge                  */
     *slot_entry,                      /* N.O. of seeds found over time     */
     *slot_entry_top, *cov_slot_entry, /* N.O. of new cov found over time     */
-    *cov_slot_entry_top;
+    *cov_slot_entry_top,
+    *mtime_edge,
+    *mtime_edge_top,
+    *mtime_entry,
+    *mtime_entry_top,
+    *mtime_cov_entry,
+    *mtime_cov_entry_top;
 
 static s32 child_pid; /* PID of the tested program         */
 
@@ -1610,17 +1616,23 @@ int main(int argc, char **argv)
 
       u32 bitmap_size = count_non_255_bytes(virgin_bits);
       // SAYF("bitmap_size is %d\n", bitmap_size);
-      if (current_no >= skip_no && (int)slot >= 0)
+      if (current_no >= skip_no && (int)slot >= 0) {
         add_slot_val(&slot_edge, &slot_edge_top, slot, bitmap_size);
+        add_slot_val(&mtime_edge, &mtime_edge_top, queue_cur->mtime, bitmap_size);
+      }
+
     }
 
     entries_no++;
     if (current_no >= skip_no && (int)slot >= 0)
     {
       add_slot_val(&slot_entry, &slot_entry_top, slot, entries_no);
-      if (queue_cur->has_new_cov)
+      add_slot_val(&mtime_entry, &mtime_entry_top, queue_cur->mtime, entries_no);
+      if (queue_cur->has_new_cov) {
         add_slot_val(&cov_slot_entry, &cov_slot_entry_top, slot,
                      cov_entries_no);
+        add_slot_val(&mtime_cov_entry, &mtime_cov_entry_top, queue_cur->mtime, cov_entries_no);
+      }
     }
 
     // move to the next item in queue
@@ -1637,11 +1649,23 @@ int main(int argc, char **argv)
 
     ck_free(slot_edge_file);
 
+    u8 *mtime_edge_file = alloc_printf("%s/mtime_edge.txt", out_dir);
+
+    write_slot_val_file(mtime_edge_file, mtime_edge);
+
+    ck_free(mtime_edge_file);
+
     u8 *cov_slot_entry_file = alloc_printf("%s/cov_slot_entry.txt", out_dir);
 
     write_slot_val_file(cov_slot_entry_file, cov_slot_entry);
 
     ck_free(cov_slot_entry_file);
+
+    u8 *mtime_cov_entry_file = alloc_printf("%s/mtime_cov_entry.txt", out_dir);
+
+    write_slot_val_file(mtime_cov_entry_file, mtime_cov_entry);
+
+    ck_free(mtime_cov_entry_file);
   }
 
   u8 *slot_entry_file = alloc_printf("%s/slot_entry.txt", out_dir);
@@ -1649,4 +1673,10 @@ int main(int argc, char **argv)
   write_slot_val_file(slot_entry_file, slot_entry);
 
   ck_free(slot_entry_file);
+
+  u8 *mtime_entry_file = alloc_printf("%s/mtime_entry.txt", out_dir);
+
+  write_slot_val_file(mtime_entry_file, mtime_entry);
+
+  ck_free(mtime_entry_file);
 }
