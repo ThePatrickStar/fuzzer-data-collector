@@ -77,7 +77,7 @@ def align_data(fuzzer_dict, misc_dict):
     data_files = fuzzer_dict['data_files']
     out_dir = misc_dict['out_dir']
     aligned_dir = out_dir + "/aligned/" + fuzzer_name + '/'
-    max_slot = int(misc_dict['max_time']) * 3600
+    max_slot = int(misc_dict['max_time'] * 3600)
 
     mkdirs(aligned_dir)
 
