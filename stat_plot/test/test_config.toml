@@ -66,3 +66,5 @@
     large_font = false
     no_legend = false
     y_start_0 = true
+    x_log_scale = false
+    y_log_scale = true

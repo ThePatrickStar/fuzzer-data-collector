@@ -65,6 +65,11 @@ def parse_config(config_path):
                     print("[!] {} (required) is missing is [misc]!".format(r_key))
                     config_valid = False
 
+            if 'x_log_scale' not in misc_dict:
+                misc_dict['x_log_scale'] = False
+            if 'y_log_scale' not in misc_dict:
+                misc_dict['y_log_scale'] = False
+
         elif misc_dict['stat_type'] == 'stest':
 
             required_keys = ["out_dir", "project", "file_postfix"]

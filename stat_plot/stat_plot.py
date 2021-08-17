@@ -347,6 +347,14 @@ def generate_plots(fuzzers_dict, misc_dict):
     fig_s = plt.figure(len(fuzzers_dict) + 1)
     ax_s = fig_s.add_subplot(111)
 
+    if misc_dict['x_log_scale']:
+        ax.set_xscale('log')
+        ax_s.set_xscale('log')
+
+    if misc_dict['y_log_scale']:
+        ax.set_yscale('log')
+        ax_s.set_yscale('log')
+
     for (n, fuzzer_name) in enumerate(fuzzers_dict):
         fuzzer_dict = fuzzers_dict[fuzzer_name]
         align_data(fuzzer_dict, misc_dict)
