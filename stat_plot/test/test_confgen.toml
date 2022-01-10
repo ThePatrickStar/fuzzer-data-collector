@@ -1,0 +1,83 @@
+bucket = "min"
+# confidence interval to be used
+confidence_lvl = 0.95
+# out_dir = "out/plots-1/djpeg-edge"
+# ylabel = "edge N.O."
+# file_postfix = "-edge-time"
+# project = "djpeg"
+# max_time is in hours
+max_time = 24
+stat_type = "overall"
+large_font = true
+no_legend = false
+y_start_0 = true
+x_log_scale = false
+y_log_scale = false
+
+# the base dir to search the datagen files from
+base_dir = "out"
+out_dir = "out/plots-1/test"
+
+# must be UNIQUE (uniq identifier on the path of the output dir for the fuzzer)
+fuzzer_sigs = [
+    "/exp3",
+    "/la-exp3",
+    "/random"
+]
+# may not be uniq
+fuzzer_names = [
+    "exp3",
+    "look-ahead-exp3",
+    "random"
+]
+fuzzer_line_styles = [
+    "solid",
+    "dashed",
+    "dashdot"
+]
+fuzzer_line_colors = [
+    "xkcd:scarlet",
+    "xkcd:slate blue",
+    "xkcd:olive yellow"
+]
+
+# must be UNIQUE
+target_sigs = [
+    "objcopy",
+    "objdump",
+    "lame",
+    "nm-2.32",
+    "exiv2",
+    "djpeg",
+    "size",
+    "readelf"
+]
+target_names = [
+    "objcopy",
+    "objdump",
+    "lame",
+    "nm-new",
+    "exiv2",
+    "djpeg",
+    "size",
+    "readelf"
+]
+
+# the filename can have wildcard
+objective_filenames = [
+    "edge_fuzz_time.txt",
+    "crash_fuzz_time.txt"
+]
+# collect edge or crash?
+objectives = [
+    "edge",
+    "crash"
+]
+objective_y_labels = [
+    "edge N.O.",
+    "crash N.O."
+]
+file_postfixes = [
+    "-edge-time",
+    "-crash-time"
+]
