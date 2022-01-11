@@ -60,14 +60,16 @@ def main():
 
             fuzzer_dict = {}
             for f, fuzzer_name in enumerate(conf_dict["fuzzer_names"]):
-                fuzzer_dict[fuzzer_name] = {
-                    "data_files": [os.path.abspath(str(data_file)) for data_file in all_data_files
+                data_files = [os.path.abspath(str(data_file)) for data_file in all_data_files
                                    if conf_dict['fuzzer_sigs'][f] in str(data_file) and
                                    conf_dict['target_sigs'][t] in str(data_file) and
-                                   fnmatch.fnmatch(data_file.name, conf_dict['objective_filenames'][o])],
-                    "line_style": conf_dict['fuzzer_line_styles'][f],
-                    "line_color": conf_dict['fuzzer_line_colors'][f]
-                }
+                                   fnmatch.fnmatch(data_file.name, conf_dict['objective_filenames'][o])]
+                if len(data_files) > 0:
+                    fuzzer_dict[fuzzer_name] = {
+                        "data_files": data_files,
+                        "line_style": conf_dict['fuzzer_line_styles'][f],
+                        "line_color": conf_dict['fuzzer_line_colors'][f]
+                    }
 
             out_dict = {
                 "fuzzers": fuzzer_dict,
