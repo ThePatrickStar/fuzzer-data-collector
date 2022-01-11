@@ -15,8 +15,8 @@ x_log_scale = false
 y_log_scale = false
 
 # the base dir to search the datagen files from
-base_dir = "out"
-out_dir = "out/plots-1/test"
+#base_dir = "out"
+#out_dir = "out/plots-1/test"
 
 # must be UNIQUE (uniq identifier on the path of the output dir for the fuzzer)
 fuzzer_sigs = [

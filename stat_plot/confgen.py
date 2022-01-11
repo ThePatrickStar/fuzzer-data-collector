@@ -9,11 +9,16 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", "-c", required=True, type=str)
     parser.add_argument("--verbose", "-v", required=False, action="store_true")
+    parser.add_argument("--output", "-o", required=True, type=str)
+    parser.add_argument("--inputs", "-i", action='append', required=True)
     args = parser.parse_args()
 
     config_path = os.path.abspath(args.config)
     verbose = args.verbose
 
+    #print('inputs is %s' % (args.inputs))
+    #print('output is %s' % (args.output))
+    #exit(1)
     print("[*] config file is {}".format(config_path))
 
     conf_dict = {}
@@ -21,16 +26,17 @@ def main():
         conf_dict = toml.load(config_file)
         # TODO check config validity
 
-    if not os.path.exists(conf_dict['out_dir']):
-        os.makedirs(conf_dict['out_dir'])
+    if not os.path.exists(args.output):
+        os.makedirs(args.output)
 
     # find all the data files
     all_data_files = []
     for fname in conf_dict['objective_filenames']:
-        for fpath in Path(conf_dict['base_dir']).rglob(fname):
-            if verbose:
-                print(os.path.abspath(str(fpath)))
-            all_data_files.append(fpath)
+        for base_dir in args.inputs:
+            for fpath in Path(base_dir).rglob(fname):
+                if verbose:
+                    print(os.path.abspath(str(fpath)))
+                all_data_files.append(fpath)
 
     # create one config for every target * obj
     for t, target_name in enumerate(conf_dict['target_names']):
@@ -39,7 +45,7 @@ def main():
             misc_dict = {
                 "bucket": conf_dict["bucket"],
                 "confidence_lvl": conf_dict["confidence_lvl"],
-                "out_dir": conf_dict["out_dir"] + "/" + "plot-"+target_name+"-"+objective+"-out/",
+                "out_dir": args.output + "/" + "plot-"+target_name+"-"+objective+"-out/",
                 "ylabel": conf_dict["objective_y_labels"][o],
                 "file_postfix": conf_dict["file_postfixes"][o],
                 "project": conf_dict["target_names"][t],
@@ -69,7 +75,7 @@ def main():
             }
 
             plot_config_name = "plot-"+target_name+"-"+objective+".toml"
-            plot_config_path = conf_dict["out_dir"] + "/" + plot_config_name
+            plot_config_path = args.output + "/" + plot_config_name
 
             with open(plot_config_path, 'w') as handle:
                 toml.dump(out_dict, handle)
