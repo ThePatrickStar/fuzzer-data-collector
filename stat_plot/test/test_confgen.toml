@@ -18,17 +18,17 @@ y_log_scale = false
 #base_dir = "out"
 #out_dir = "out/plots-1/test"
 
-# must be UNIQUE (uniq identifier on the path of the output dir for the fuzzer)
+# must be UNIQUE (uniq identifier on the path of the output dir for the fuzzer); can use regex pattern
 fuzzer_sigs = [
-	"/greedy",
-	"/la-greedy",
-	"/greedy-rr",
-	"/la-greedy-rr",
-	"/random-rr",
-	"/random",
-	"/exp3",
-	"/la-exp3",
-	"/fixed"
+	"/greedy\\d+",
+	"/la-greedy\\d+",
+	"/greedy-rr\\d+",
+	"/la-greedy-rr\\d+",
+	"/random-rr\\d+",
+	"/random\\d+",
+	"/exp3\\d+",
+	"/la-exp3\\d+",
+	"/fixed\\d+"
 ]
 # may not be uniq
 fuzzer_names = [
