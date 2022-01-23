@@ -20,49 +20,73 @@ y_log_scale = false
 
 # must be UNIQUE (uniq identifier on the path of the output dir for the fuzzer); can use regex pattern
 fuzzer_sigs = [
-	"/greedy\\d+",
-	"/la-greedy\\d+",
-	"/greedy-rr\\d+",
-	"/la-greedy-rr\\d+",
-	"/random-rr\\d+",
-	"/random\\d+",
-	"/exp3\\d+",
-	"/la-exp3\\d+",
-	"/fixed\\d+"
+	"/greedy\\d+/",
+#	"/la-greedy\\d+/",
+#	"/greedy-rr\\d+/",
+#	"/la-greedy-rr\\d+/",
+#	"/random-rr\\d+/",
+	"/random\\d+/",
+	"/exp3\\d+/",
+#	"/la-exp3\\d+/",
+#	"/fixed\\d+/"
+#	"/greedy_ts15m\\d+/",
+#	"/random_ts15m\\d+/",
+#	"/exp3_ts15m\\d+/",
+#	"/la-greedy_ts15m\\d+/",
+#	"/random-rr_ts15m\\d+/",
+#	"/la-exp3_ts15m\\d+/",
+#	"/greedy_ts1h\\d+/",
+#	"/random_ts1h\\d+/",
+#	"/exp3_ts1h\\d+/",
+#	"/la-greedy_ts1h\\d+/",
+#	"/random-rr_ts1h\\d+/",
+#	"/la-exp3_ts1h\\d+/",
 ]
 # may not be uniq
 fuzzer_names = [
-	"greedy",
-	"la-greedy",
-	"greedy-rr",
-	"la-greedy-rr",
-	"random-rr",
-	"random",
-	"exp3",
-	"la-exp3",
-	"fixed"
+	"greedy_ts30m",
+#	"la-greedy_ts30m",
+#	"greedy-rr_ts30m",
+#	"la-greedy-rr_ts30m",
+#	"random-rr_ts30m",
+	"random_ts30m",
+	"exp3_ts30m",
+#	"la-exp3_ts30m",
+#	"fixed_ts30m"
+#	"greedy_ts15m",
+#	"random_ts15m",
+#	"exp3_ts15m",
+#	"la-greedy_ts15m",
+#	"random-rr_ts15m",
+#	"la-exp3_ts15m",
+#	"greedy_ts1h",
+#	"random_ts1h",
+#	"exp3_ts1h",
+#	"la-greedy_ts1h",
+#	"random-rr_ts1h",
+#	"la-exp3_ts1h",
 ]
 fuzzer_line_styles = [
     "solid",
     "dashed",
     "dashdot",
-    "solid",
-    "dashed",
-    "dashdot",
-    "solid",
-    "dashed",
-    "dashdot"
+#    "solid",
+#    "dashed",
+#    "dashdot",
+#    "solid",
+#    "dashed",
+#    "dashdot"
 ]
 fuzzer_line_colors = [
     "xkcd:scarlet",
-    "xkcd:deep red",
-    "xkcd:wine red",
+#    "xkcd:deep red",
+#    "xkcd:wine red",
     "xkcd:olive yellow",
-    "xkcd:dirty yellow",
-    "xkcd:bright yellow",
+#    "xkcd:dirty yellow",
+#    "xkcd:bright yellow",
     "xkcd:slate blue",
-    "xkcd:sea blue",
-    "xkcd:green blue"
+#    "xkcd:sea blue",
+#    "xkcd:green blue"
 ]
 
 # must be UNIQUE
@@ -71,20 +95,36 @@ target_sigs = [
     "objdump-2.32",
     "lame-3.99.5",
     "nm-2.32",
-    "exiv2-0.26",
+#    "exiv2-0.26",
     "djpeg-1.5.3",
-    "size-2.32",
-    "readelf-2.32"
+#    "size-2.32",
+    "readelf-2.32",
+#    "tcpdump-5830e58aa0",
+#    "sam2p-0.49.4",
+    "tiff2bw-4.0.10",
+    "tiff2ps-4.0.10",
+    "xmllint-2.9.9",
+    "flvmeta-1.2.1",
+#    "radare2-5.5.4",
+#    "MP4Box-41e48716e0",
 ]
 target_names = [
     "objcopy-2.32",
     "objdump-2.32",
     "lame-3.99.5",
     "nm-2.32",
-    "exiv2-0.26",
+#    "exiv2-0.26",
     "djpeg-1.5.3",
-    "size-2.32",
-    "readelf-2.32"
+#    "size-2.32",
+    "readelf-2.32",
+#    "tcpdump-5830e58aa0",
+#    "sam2p-0.49.4",
+    "tiff2bw-4.0.10",
+    "tiff2ps-4.0.10",
+    "xmllint-2.9.9",
+    "flvmeta-1.2.1",
+#    "radare2-5.5.4",
+#    "MP4Box-41e48716e0",
 ]
 
 # the filename can have wildcard
