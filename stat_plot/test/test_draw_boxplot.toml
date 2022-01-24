@@ -1,0 +1,19 @@
+# only for the config filename, not the path!
+config_sigs = [
+    '.*-edge.toml',
+#     '.*-crash.toml'
+]
+
+# in seconds
+data_points = [
+    14400,
+    43200,
+    86400
+]
+
+# the color palette
+# https://i2.wp.com/datavizpyr.com/wp-content/uploads/2020/01/RColorBrewer_colorblind_friendly_palettes.jpeg?fit=598%2C897&ssl=1
+color_palette = "YlGnBu"
+
+# width of the box
+width = 0.8
