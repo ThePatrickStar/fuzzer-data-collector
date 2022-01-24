@@ -465,7 +465,7 @@ def generate_box_plots(fuzzers_dict, misc_dict):
     box_data = []
     box_colors = []
     line_styles = []
-    marker = []
+    # marker = []
     fuzzer_names = list(fuzzers_dict.keys())
     fuzzer_names.sort()
     for fuzzer_name in fuzzer_names:
@@ -477,7 +477,7 @@ def generate_box_plots(fuzzers_dict, misc_dict):
 
         line_styles.append(fuzzer['line_style'])
 
-        marker.append(fuzzer['marker'])
+        # marker.append(fuzzer['marker'])
 
         if not os.path.exists(data_file):
             fuzzer['final_vals'] = []
@@ -526,11 +526,11 @@ def generate_box_plots(fuzzers_dict, misc_dict):
         ax.plot(xn, y, color="k", linewidth=5, solid_capstyle="butt", zorder=4)
 
     # plot the dots (scatter)
-    # for (i, fuzzer_name) in enumerate(fuzzer_names):
-    #     fuzzer = fuzzers_dict[fuzzer_name]
-    #     y = fuzzer['final_vals']
-    #     x = np.random.normal(1+i, 0.1, size=len(y))
-    #     ax.scatter(x, y, c=fuzzer['box_color'], alpha=0.8, s=100)
+    for (i, fuzzer_name) in enumerate(fuzzer_names):
+        fuzzer = fuzzers_dict[fuzzer_name]
+        y = fuzzer['final_vals']
+        x = np.random.normal(1+i, 0.1, size=len(y))
+        ax.scatter(x, y, c=fuzzer['box_color'], alpha=0.8, s=100)
 
     if 'ylim' in misc_dict:
         ax.set_ylim(misc_dict['ylim'])
