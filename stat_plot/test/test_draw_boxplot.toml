@@ -17,3 +17,6 @@ color_palette = "YlGnBu"
 
 # width of the box
 width = 0.8
+
+# y start from 0?
+y_start_0 = false

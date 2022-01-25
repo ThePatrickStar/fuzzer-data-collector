@@ -103,6 +103,8 @@ def main():
                     # for tick in ax.get_xticklabels():
                     #     tick.set_rotation(45)
                     # palette: "Greys", "ch:.25",
+                    if conf_dict['y_start_0']:
+                        ax.set_ylim(ymin=0)
                     box = sns.boxplot(ax=ax, data=data, orient="v", width=conf_dict['width'], palette=conf_dict['color_palette'], fliersize=0,
                                       dodge=False)
                     swarm = sns.swarmplot(ax=ax, orient="v", data=data, color=".25", size=8)
@@ -124,7 +126,8 @@ def main():
                         item.set_fontsize(16)
                     # for tick in ax.get_xticklabels():
                     #     tick.set_rotation(45)
-
+                    if conf_dict['y_start_0']:
+                        ax.set_ylim(ymin=0)
                     violin = sns.violinplot(ax=ax, data=data, orient="v", width=conf_dict['width'], palette=conf_dict['color_palette'], dodge=False,
                                             scale='width')
                     swarm = sns.swarmplot(ax=ax, orient="v", data=data, color=".25", size=8)
