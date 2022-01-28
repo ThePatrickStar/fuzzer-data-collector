@@ -9,11 +9,18 @@ import json
 
 # currently support student t test, mann whitney u test and a12 results
 def statistic_tests(data_array):
+    # TODO: later make these options
+    p_value_sig_bar = 0.05
+    a12_sig_bar = 0.71
+
     checked = []
     data_names = data_array.dtype.names
     student_t_results = {}
+    student_t_sig_results = {}
     mw_u_results = {}
+    mw_u_sig_results = {}
     a12_results = {}
+    a12_sig_results = {}
     average_values = {}
     for dname1 in data_names:
         for dname2 in data_names:
@@ -28,11 +35,22 @@ def statistic_tests(data_array):
 
                 student_t_results[s_test_key] = student_t_p_value
                 mw_u_results[s_test_key] = mw_u_p_value
+                if mw_u_p_value < p_value_sig_bar:
+                    mw_u_sig_results[s_test_key] = mw_u_p_value
+                if student_t_p_value < p_value_sig_bar:
+                    student_t_sig_results[s_test_key] = student_t_p_value
 
                 a12_key1 = '{}<{}'.format(dname1, dname2)
+                a12_val1 = calculate_a12(data_array[dname1], data_array[dname2])
                 a12_key2 = '{}<{}'.format(dname2, dname1)
-                a12_results[a12_key1] = calculate_a12(data_array[dname1], data_array[dname2])
-                a12_results[a12_key2] = calculate_a12(data_array[dname2], data_array[dname1])
+                a12_val2 = calculate_a12(data_array[dname2], data_array[dname1])
+                a12_results[a12_key1] = a12_val1
+                a12_results[a12_key2] = a12_val2
+
+                if a12_val1 > a12_sig_bar:
+                    a12_sig_results[a12_key1] = a12_val1
+                if a12_val2 > a12_sig_bar:
+                    a12_sig_results[a12_key2] = a12_val2
 
         # do things that do not need comparison with another set of data
         average_values[dname1] = np.average(data_array[dname1])
@@ -43,7 +61,16 @@ def statistic_tests(data_array):
         "a12": a12_results,
         "average": average_values
     }
-    return statistic_test_results
+    statistic_test_sig_results = {
+        "student_t_test": student_t_sig_results,
+        "mann_whitney_u_test": mw_u_sig_results,
+        "a12": a12_sig_results
+    }
+    results = {
+        "all": statistic_test_results,
+        "significant": statistic_test_sig_results
+    }
+    return results
 
 
 # calculate the chance of f1s < f2s
