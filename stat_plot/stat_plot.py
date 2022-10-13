@@ -173,8 +173,7 @@ def detailed_plot(fuzzer_dict, misc_dict, n):
             filename_pdf = base_filename + '.pdf'
             filename_png = base_filename + '.png'
 
-            ax.set(xlabel='time ({})'.format(display_bucket(
-                misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
+            ax.set(title='{}'.format(misc_dict["project"]), xlabel='time ({})'.format(display_bucket(misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
             ax.legend()
             fig.savefig(filename_pdf, bbox_inches='tight', dpi=100)
             fig.savefig(filename_png, bbox_inches='tight', dpi=100)
@@ -399,8 +398,7 @@ def generate_plots(fuzzers_dict, misc_dict):
         ax.set_ylim(ymin=0)
         ax_s.set_ylim(ymin=0)
 
-    ax.set(xlabel='time ({})'.format(display_bucket(
-        misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
+    ax.set(title='{}'.format(misc_dict["project"]), xlabel='time ({})'.format(display_bucket(misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
     if 'plot_title' in misc_dict:
         ax.set(title=misc_dict['plot_title'])
         ax.set_title(misc_dict['plot_title'], fontsize=18, color='black')
@@ -425,8 +423,7 @@ def generate_plots(fuzzers_dict, misc_dict):
     fig.savefig(filename_pdf, bbox_inches='tight', dpi=100)
     fig.savefig(filename_png, bbox_inches='tight', dpi=100)
 
-    ax_s.set(xlabel='time ({})'.format(display_bucket(
-        misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
+    ax_s.set(title='{}'.format(misc_dict["project"]), xlabel='time ({})'.format(display_bucket(misc_dict['bucket'])), ylabel=misc_dict['ylabel'])
     if 'no_legend' in misc_dict and misc_dict['no_legend']:
         pass
     else:
@@ -620,7 +617,7 @@ def generate_scatter_plots(fuzzers_dict, misc_dict):
     ax.set_yscale('log')
     if 'plot_title' in misc_dict:
         ax.set(title=misc_dict['plot_title'])
-    ax.set(xlabel=misc_dict['xlabel'], ylabel=misc_dict['ylabel'])
+    ax.set(title='{}'.format(misc_dict["project"]), xlabel=misc_dict['xlabel'], ylabel=misc_dict['ylabel'])
 
     large_font = misc_dict['large_font']
 
@@ -660,7 +657,7 @@ def draw_histograms(histtype, figure_no, xss, colors, fuzzer_names, misc_dict):
     ax.set_yscale('log')
     if 'plot_title' in misc_dict:
         ax.set(title=misc_dict['plot_title'])
-    ax.set(xlabel=misc_dict['xlabel'], ylabel=misc_dict['ylabel'])
+    ax.set(title='{}'.format(misc_dict["project"]), xlabel=misc_dict['xlabel'], ylabel=misc_dict['ylabel'])
     # scientific notation for x axis labels
     # ax.ticklabel_format(style='sci', axis='x', scilimits=(1, 4))
 
